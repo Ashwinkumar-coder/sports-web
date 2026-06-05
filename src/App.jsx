@@ -21,7 +21,7 @@ function App() {
   const [user, setUser] = useState(null)
   
   // Forms & UI States
-  const [authMode, setAuthMode] = useState('login') // login, register
+  const [currentScreen, setCurrentScreen] = useState('standard_login') // standard_login, admin_login, register
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [regForm, setRegForm] = useState({
     email: '', password: '', full_name: '', role: 'player', department_id: '', federation_id: ''
@@ -175,13 +175,26 @@ function App() {
     }
   }
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e, type) => {
     e.preventDefault()
     setLoading(true)
     setErrorMsg('')
     try {
       const data = await api.login(loginForm.email, loginForm.password)
+      const profile = await api.getProfile(data.access_token)
+      
+      const isAdminRole = ['super_admin', 'department_admin', 'federation_admin'].includes(profile.role)
+      
+      if (type === 'admin' && !isAdminRole) {
+        throw new Error('Access Denied: Standard users cannot log in via the Admin Portal.')
+      }
+      
+      if (type === 'standard' && isAdminRole) {
+        throw new Error('Please log in via the Admin Portal.')
+      }
+
       setToken(data.access_token)
+      setUser(profile)
       setSuccessMsg('Successfully logged in!')
     } catch (err) {
       setErrorMsg(err.message || 'Cannot connect to backend server.')
@@ -205,7 +218,7 @@ function App() {
       }
       await api.register(body)
       setSuccessMsg('Registration request sent successfully! Wait for Department Admin to approve.')
-      setAuthMode('login')
+      setCurrentScreen('standard_login')
       setLoginForm({ email: regForm.email, password: regForm.password })
     } catch (err) {
       setErrorMsg(err.message || 'Registration failed.')
@@ -500,14 +513,12 @@ function App() {
               setLoginForm={setLoginForm}
               regForm={regForm}
               setRegForm={setRegForm}
-              authMode={authMode}
-              setAuthMode={setAuthMode}
+              currentScreen={currentScreen}
+              setCurrentScreen={setCurrentScreen}
               handleLogin={handleLogin}
               handleRegister={handleRegister}
               handleQuickSeed={handleQuickSeed}
               loading={loading}
-              departments={departments}
-              federations={federations}
             />
           ) : (
             user && (
