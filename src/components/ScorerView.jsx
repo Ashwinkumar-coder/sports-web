@@ -1,4 +1,5 @@
 export default function ScorerView({
+  activeTab,
   dashboardData,
   activeScoringMatch,
   setActiveScoringMatch,
@@ -9,18 +10,74 @@ export default function ScorerView({
   matches,
   handleStartScoring
 }) {
-  return (
-    <div className="space-y-6">
-      {/* Active Scoring View */}
-      {activeScoringMatch && (
+  if (activeTab === 'dashboard') {
+    return (
+      <div className="space-y-6">
+        {/* List of assigned matches */}
+        <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-lg space-y-4">
+          <h3 className="font-bold text-lg text-slate-200">Your Assigned Matches</h3>
+          <p className="text-slate-400 text-sm">Select an assigned match to record scores and declare final outcomes.</p>
+          
+          {dashboardData.assigned_matches.length === 0 ? (
+            <p className="text-slate-500 text-sm italic">You have no match scoring duties assigned.</p>
+          ) : (
+            <div className="space-y-3">
+              {dashboardData.assigned_matches.map(m => {
+                const fullMatch = matches.find(match => match.id === m.id)
+                return (
+                  <div key={m.id} className="bg-slate-950 p-4 rounded border border-slate-800 flex justify-between items-center text-xs">
+                    <div>
+                      <div className="font-bold text-slate-300">{m.team_a_name} vs {m.team_b_name}</div>
+                      <div className="text-[10px] text-slate-500 uppercase mt-1">{m.tournament_name}</div>
+                      <div className="text-slate-400 font-mono mt-1 text-[10px]">{m.score_summary}</div>
+                    </div>
+                    
+                    {m.status !== 'completed' ? (
+                      <button
+                        onClick={() => handleStartScoring(fullMatch)}
+                        className="bg-sports-cyan text-slate-950 text-[10px] font-bold px-3 py-1.5 rounded uppercase cursor-pointer"
+                      >
+                        Score Match
+                      </button>
+                    ) : (
+                      <span className="text-emerald-400 font-mono text-[10px] font-bold">COMPLETED</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTab === 'live_scoring') {
+    if (!activeScoringMatch) {
+      return (
+        <div className="space-y-6">
+          <div className="bg-slate-900/40 border border-slate-850 p-6 rounded-lg text-center space-y-3">
+            <span className="text-3xl">🏏</span>
+            <h3 className="font-bold text-slate-200">No Match Selected for Scoring</h3>
+            <p className="text-slate-400 text-xs max-w-sm mx-auto">
+              You haven't selected a match to score yet. Please go to the **Matches** tab, find an active match, and click **Score Match** to begin broadcasting live scores.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Active Scoring View */}
         <div className="bg-slate-900 border-2 border-sports-cyan p-6 rounded-xl space-y-6 glass-panel">
           <div className="flex justify-between items-center">
             <span className="text-xs font-black text-sports-cyan uppercase tracking-widest">LIVE SCORING ENGINE</span>
             <button
               onClick={() => setActiveScoringMatch(null)}
-              className="text-slate-500 hover:text-slate-200 text-xs uppercase"
+              className="text-slate-500 hover:text-slate-200 text-xs uppercase cursor-pointer"
             >
-              Minimize
+              Close / Exit scoring
             </button>
           </div>
 
@@ -146,43 +203,9 @@ export default function ScorerView({
             </div>
           </form>
         </div>
-      )}
-
-      {/* List of assigned matches */}
-      <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-lg space-y-4">
-        <h3 className="font-bold text-lg text-slate-200">Your Assigned Matches</h3>
-        <p className="text-slate-400 text-sm">Select an assigned match to record scores and declare final outcomes.</p>
-        
-        {dashboardData.assigned_matches.length === 0 ? (
-          <p className="text-slate-500 text-sm italic">You have no match scoring duties assigned.</p>
-        ) : (
-          <div className="space-y-3">
-            {dashboardData.assigned_matches.map(m => {
-              const fullMatch = matches.find(match => match.id === m.id)
-              return (
-                <div key={m.id} className="bg-slate-950 p-4 rounded border border-slate-800 flex justify-between items-center text-xs">
-                  <div>
-                    <div className="font-bold text-slate-300">{m.team_a_name} vs {m.team_b_name}</div>
-                    <div className="text-[10px] text-slate-500 uppercase mt-1">{m.tournament_name}</div>
-                    <div className="text-slate-400 font-mono mt-1 text-[10px]">{m.score_summary}</div>
-                  </div>
-                  
-                  {m.status !== 'completed' ? (
-                    <button
-                      onClick={() => handleStartScoring(fullMatch)}
-                      className="bg-sports-cyan text-slate-950 text-[10px] font-bold px-3 py-1.5 rounded uppercase cursor-pointer"
-                    >
-                      Score Match
-                    </button>
-                  ) : (
-                    <span className="text-emerald-400 font-mono text-[10px] font-bold">COMPLETED</span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )}
       </div>
-    </div>
-  )
+    );
+  }
+
+  return null;
 }

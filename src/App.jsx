@@ -16,12 +16,75 @@ import Mailbox from './components/Mailbox'
 import { api } from './services/api'
 
 function App() {
+  // Route detection for Super Admin
+  const isAdminPath = window.location.pathname === '/admin'
+
   // Authentication & Session
   const [token, setToken] = useState(localStorage.getItem('token') || '')
   const [user, setUser] = useState(null)
+
+  const [activeTab, setActiveTab] = useState('overview')
+
+  // Get sidebar links based on role
+  const getSidebarLinks = (role) => {
+    switch (role) {
+      case 'super_admin':
+        return [
+          { id: 'overview', name: 'Overview', icon: '📊' },
+          { id: 'departments', name: 'Departments', icon: '🏛️' },
+          { id: 'admins', name: 'Admins', icon: '🛡️' },
+          { id: 'federations', name: 'Federations', icon: '🏅' },
+        ]
+      case 'department_admin':
+        return [
+          { id: 'overview', name: 'Overview', icon: '📊' },
+          { id: 'create_federation', name: 'Federations', icon: '🏅' },
+          { id: 'approve_users', name: 'Users Approvals', icon: '👥' },
+          { id: 'approve_tournaments', name: 'Tournaments', icon: '🏆' },
+        ]
+      case 'federation_admin':
+        return [
+          { id: 'overview', name: 'Overview', icon: '📊' },
+          { id: 'create_tournament', name: 'Tournaments', icon: '🏆' },
+          { id: 'schedule_matches', name: 'Schedule Matches', icon: '📅' },
+        ]
+      case 'player':
+        return [
+          { id: 'dashboard', name: 'My Dashboard', icon: '🏏' },
+          { id: 'register_team', name: 'Register Team', icon: '👥' },
+        ]
+      case 'coach':
+        return [
+          { id: 'dashboard', name: 'My Players', icon: '📋' },
+          { id: 'squads', name: 'Training Squads', icon: '👥' },
+        ]
+      case 'sponsor':
+        return [
+          { id: 'dashboard', name: 'Sponsorships', icon: '💰' },
+          { id: 'fund_tournament', name: 'Pledge Funds', icon: '🏆' },
+        ]
+      case 'scorer':
+        return [
+          { id: 'dashboard', name: 'Matches', icon: '📅' },
+          { id: 'live_scoring', name: 'Live Scoring', icon: '🔴' },
+        ]
+      default:
+        return []
+    }
+  }
+
+  // Synchronize activeTab based on logged-in user role
+  useEffect(() => {
+    if (user) {
+      const links = getSidebarLinks(user.role)
+      if (links.length > 0) {
+        setActiveTab(links[0].id)
+      }
+    }
+  }, [user])
   
   // Forms & UI States
-  const [currentScreen, setCurrentScreen] = useState('standard_login') // standard_login, admin_login, register
+  const [currentScreen, setCurrentScreen] = useState(isAdminPath ? 'admin_login' : 'standard_login') // standard_login, admin_login, register
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [regForm, setRegForm] = useState({
     email: '', password: '', full_name: '', role: 'player', department_id: '', federation_id: ''
@@ -42,6 +105,7 @@ function App() {
   
   // Creation Form States
   const [newDeptName, setNewDeptName] = useState('')
+  const [newDeptAdmin, setNewDeptAdmin] = useState({ full_name: '', email: '', password: '', department_id: '' })
   const [newFed, setNewFed] = useState({ name: '', admin_id: '' })
   const [newTourney, setNewTourney] = useState({
     name: '', fee: 0, number_of_entry: 4, maximum_player_count: 5, team_limits: 5
@@ -86,6 +150,7 @@ function App() {
       localStorage.removeItem('token')
       setUser(null)
       setDashboardData(null)
+      setCurrentScreen(window.location.pathname === '/admin' ? 'admin_login' : 'standard_login')
     }
   }, [token])
 
@@ -97,6 +162,21 @@ function App() {
       return () => clearInterval(interval)
     }
   }, [token, user])
+
+  // Load and poll matches for Live Matches widget (public)
+  useEffect(() => {
+    const fetchMatchesOnly = async () => {
+      try {
+        const matchData = await api.getMatches(token || '')
+        setMatches(matchData)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    fetchMatchesOnly()
+    const interval = setInterval(fetchMatchesOnly, 5000)
+    return () => clearInterval(interval)
+  }, [token])
 
   // Fetch data based on role
   useEffect(() => {
@@ -142,8 +222,10 @@ function App() {
       const coaches = await api.getUsersByRole(token, 'coach')
       const players = await api.getUsersByRole(token, 'player')
       const scorers = await api.getUsersByRole(token, 'scorer')
+      const deptAdmins = await api.getUsersByRole(token, 'department_admin')
+      const fedAdmins = await api.getUsersByRole(token, 'federation_admin')
       
-      setUsersList([...coaches, ...players, ...scorers])
+      setUsersList([...coaches, ...players, ...scorers, ...deptAdmins, ...fedAdmins])
     } catch (e) {
       console.error(e)
     }
@@ -183,14 +265,12 @@ function App() {
       const data = await api.login(loginForm.email, loginForm.password)
       const profile = await api.getProfile(data.access_token)
       
-      const isAdminRole = ['super_admin', 'department_admin', 'federation_admin'].includes(profile.role)
-      
-      if (type === 'admin' && !isAdminRole) {
-        throw new Error('Access Denied: Standard users cannot log in via the Admin Portal.')
+      if (type === 'admin' && profile.role !== 'super_admin') {
+        throw new Error('Access Denied: Only Super Admin can access the Admin Portal.')
       }
       
-      if (type === 'standard' && isAdminRole) {
-        throw new Error('Please log in via the Admin Portal.')
+      if (type === 'standard' && profile.role === 'super_admin') {
+        throw new Error('Access Denied: Super Admin must log in via the Admin Portal.')
       }
 
       setToken(data.access_token)
@@ -257,6 +337,34 @@ function App() {
       fetchAllCommonData()
     } catch (e) {
       setErrorMsg(e.message || 'Failed to create department.')
+    }
+  }
+
+  const handleCreateDeptAdmin = async (e) => {
+    e.preventDefault()
+    if (!newDeptAdmin.full_name || !newDeptAdmin.email || !newDeptAdmin.password || !newDeptAdmin.department_id) {
+      setErrorMsg('Please fill out all fields to create a Department Admin.')
+      return
+    }
+    setLoading(true)
+    setErrorMsg('')
+    try {
+      const body = {
+        email: newDeptAdmin.email,
+        password: newDeptAdmin.password,
+        full_name: newDeptAdmin.full_name,
+        role: 'department_admin',
+        department_id: parseInt(newDeptAdmin.department_id),
+        federation_id: null
+      }
+      await api.register(body)
+      setSuccessMsg(`Department Admin '${newDeptAdmin.full_name}' created successfully!`)
+      setNewDeptAdmin({ full_name: '', email: '', password: '', department_id: '' })
+      fetchAllCommonData()
+    } catch (err) {
+      setErrorMsg(err.message || 'Failed to create Department Admin.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -379,6 +487,7 @@ function App() {
   const handleStartScoring = (match) => {
     setActiveScoringMatch(match)
     setScoringForm({ team: 'team_a', runs: match.team_a_runs, wickets: match.team_a_wickets, overs: match.team_a_overs })
+    setActiveTab('live_scoring')
   }
 
   const handleUpdateLiveScore = async (e) => {
@@ -519,102 +628,139 @@ function App() {
               handleRegister={handleRegister}
               handleQuickSeed={handleQuickSeed}
               loading={loading}
+              isAdminPath={isAdminPath}
             />
           ) : (
             user && (
-              <div className="space-y-6">
-                {/* Dashboard Header Banner */}
-                <div className="bg-slate-950/70 border border-slate-800 p-6 rounded-xl flex items-center justify-between glass-panel">
-                  <div>
-                    <div className="text-xs text-sports-cyan font-mono tracking-widest uppercase">Logged-in Portal</div>
-                    <h2 className="text-2xl font-bold text-slate-100 capitalize">
-                      {user.role.replace('_', ' ')} Dashboard
-                    </h2>
+              <div className="flex flex-col md:flex-row gap-6">
+                
+                {/* Role Sidebar */}
+                <aside className="w-full md:w-56 shrink-0 flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none border-b md:border-b-0 md:border-r border-slate-800 pr-0 md:pr-4">
+                  {getSidebarLinks(user.role).map((link) => (
+                    <button
+                      key={link.id}
+                      onClick={() => setActiveTab(link.id)}
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition cursor-pointer shrink-0 ${
+                        activeTab === link.id
+                          ? 'bg-sports-cyan/15 text-sports-cyan border-l-2 border-sports-cyan'
+                          : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
+                      }`}
+                    >
+                      <span className="text-sm">{link.icon}</span>
+                      <span>{link.name}</span>
+                    </button>
+                  ))}
+                </aside>
+
+                {/* Dashboard Views Content Panel */}
+                <div className="flex-1 min-w-0">
+                  {/* Dashboard Header Banner */}
+                  <div className="bg-slate-950/70 border border-slate-800 p-6 rounded-xl flex items-center justify-between glass-panel mb-6">
+                    <div>
+                      <div className="text-xs text-sports-cyan font-mono tracking-widest uppercase">Logged-in Portal</div>
+                      <h2 className="text-2xl font-bold text-slate-100 capitalize">
+                        {user.role.replace('_', ' ')} Dashboard
+                      </h2>
+                    </div>
+                    <div className="bg-sports-cyan/5 text-sports-cyan border border-sports-cyan/20 px-4 py-2 rounded-lg font-mono text-xs text-center">
+                      Account Approved: <span className="font-bold text-emerald-400">TRUE</span>
+                    </div>
                   </div>
-                  <div className="bg-sports-cyan/5 text-sports-cyan border border-sports-cyan/20 px-4 py-2 rounded-lg font-mono text-xs text-center">
-                    Account Approved: <span className="font-bold text-emerald-400">TRUE</span>
-                  </div>
+
+                  {/* Dashboard Views */}
+                  {user.role === 'super_admin' && (
+                    <SuperAdminView
+                      activeTab={activeTab}
+                      newDeptName={newDeptName}
+                      setNewDeptName={setNewDeptName}
+                      handleCreateDept={handleCreateDept}
+                      departments={departments}
+                      federations={federations}
+                      newDeptAdmin={newDeptAdmin}
+                      setNewDeptAdmin={setNewDeptAdmin}
+                      handleCreateDeptAdmin={handleCreateDeptAdmin}
+                      loading={loading}
+                      usersList={usersList}
+                    />
+                  )}
+
+                  {user.role === 'department_admin' && (
+                    <DepartmentAdminView
+                      activeTab={activeTab}
+                      newFed={newFed}
+                      setNewFed={setNewFed}
+                      handleCreateFederation={handleCreateFederation}
+                      usersList={usersList}
+                      pendingUsers={pendingUsers}
+                      handleApproveUser={handleApproveUser}
+                      pendingTournaments={pendingTournaments}
+                      handleApproveTournament={handleApproveTournament}
+                    />
+                  )}
+
+                  {user.role === 'federation_admin' && (
+                    <FederationAdminView
+                      activeTab={activeTab}
+                      newTourney={newTourney}
+                      setNewTourney={setNewTourney}
+                      handleCreateTournament={handleCreateTournament}
+                      newMatch={newMatch}
+                      setNewMatch={setNewMatch}
+                      handleScheduleMatch={handleScheduleMatch}
+                      tournaments={tournaments}
+                      usersList={usersList}
+                      teamsListForSelectedMatchTourney={teamsListForSelectedMatchTourney}
+                    />
+                  )}
+
+                  {user.role === 'player' && dashboardData && (
+                    <PlayerView
+                      activeTab={activeTab}
+                      dashboardData={dashboardData}
+                      tournaments={tournaments}
+                      selectedTournament={selectedTournament}
+                      setSelectedTournament={setSelectedTournament}
+                      newTeam={newTeam}
+                      setNewTeam={setNewTeam}
+                      usersList={usersList}
+                      handleRegisterTeam={handleRegisterTeam}
+                      currentUser={user}
+                    />
+                  )}
+
+                  {user.role === 'coach' && dashboardData && (
+                    <CoachView
+                      activeTab={activeTab}
+                      dashboardData={dashboardData}
+                    />
+                  )}
+
+                  {user.role === 'sponsor' && dashboardData && (
+                    <SponsorView
+                      activeTab={activeTab}
+                      dashboardData={dashboardData}
+                      tournaments={tournaments}
+                      sponsorAmount={sponsorAmount}
+                      setSponsorAmount={setSponsorAmount}
+                      handleSponsorTournament={handleSponsorTournament}
+                    />
+                  )}
+
+                  {user.role === 'scorer' && dashboardData && (
+                    <ScorerView
+                      activeTab={activeTab}
+                      dashboardData={dashboardData}
+                      activeScoringMatch={activeScoringMatch}
+                      setActiveScoringMatch={setActiveScoringMatch}
+                      scoringForm={scoringForm}
+                      setScoringForm={setScoringForm}
+                      handleUpdateLiveScore={handleUpdateLiveScore}
+                      openCompletionModal={openCompletionModal}
+                      matches={matches}
+                      handleStartScoring={handleStartScoring}
+                    />
+                  )}
                 </div>
-
-                {/* Dashboard Views */}
-                {user.role === 'super_admin' && (
-                  <SuperAdminView
-                    newDeptName={newDeptName}
-                    setNewDeptName={setNewDeptName}
-                    handleCreateDept={handleCreateDept}
-                    departments={departments}
-                    federations={federations}
-                  />
-                )}
-
-                {user.role === 'department_admin' && (
-                  <DepartmentAdminView
-                    newFed={newFed}
-                    setNewFed={setNewFed}
-                    handleCreateFederation={handleCreateFederation}
-                    usersList={usersList}
-                    pendingUsers={pendingUsers}
-                    handleApproveUser={handleApproveUser}
-                    pendingTournaments={pendingTournaments}
-                    handleApproveTournament={handleApproveTournament}
-                  />
-                )}
-
-                {user.role === 'federation_admin' && (
-                  <FederationAdminView
-                    newTourney={newTourney}
-                    setNewTourney={setNewTourney}
-                    handleCreateTournament={handleCreateTournament}
-                    newMatch={newMatch}
-                    setNewMatch={setNewMatch}
-                    handleScheduleMatch={handleScheduleMatch}
-                    tournaments={tournaments}
-                    usersList={usersList}
-                    teamsListForSelectedMatchTourney={teamsListForSelectedMatchTourney}
-                  />
-                )}
-
-                {user.role === 'player' && dashboardData && (
-                  <PlayerView
-                    dashboardData={dashboardData}
-                    tournaments={tournaments}
-                    selectedTournament={selectedTournament}
-                    setSelectedTournament={setSelectedTournament}
-                    newTeam={newTeam}
-                    setNewTeam={setNewTeam}
-                    usersList={usersList}
-                    handleRegisterTeam={handleRegisterTeam}
-                    currentUser={user}
-                  />
-                )}
-
-                {user.role === 'coach' && dashboardData && (
-                  <CoachView dashboardData={dashboardData} />
-                )}
-
-                {user.role === 'sponsor' && dashboardData && (
-                  <SponsorView
-                    dashboardData={dashboardData}
-                    tournaments={tournaments}
-                    sponsorAmount={sponsorAmount}
-                    setSponsorAmount={setSponsorAmount}
-                    handleSponsorTournament={handleSponsorTournament}
-                  />
-                )}
-
-                {user.role === 'scorer' && dashboardData && (
-                  <ScorerView
-                    dashboardData={dashboardData}
-                    activeScoringMatch={activeScoringMatch}
-                    setActiveScoringMatch={setActiveScoringMatch}
-                    scoringForm={scoringForm}
-                    setScoringForm={setScoringForm}
-                    handleUpdateLiveScore={handleUpdateLiveScore}
-                    openCompletionModal={openCompletionModal}
-                    matches={matches}
-                    handleStartScoring={handleStartScoring}
-                  />
-                )}
               </div>
             )
           )}
