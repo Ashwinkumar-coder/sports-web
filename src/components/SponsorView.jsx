@@ -1,3 +1,9 @@
+import React from 'react';
+import { Card, CardHeader, CardTitle } from './ui/Card';
+import { Button } from './ui/Button';
+import { Badge } from './ui/Badge';
+import { Coins, History, HeartHandshake } from 'lucide-react';
+
 export default function SponsorView({
   activeTab,
   dashboardData,
@@ -8,37 +14,40 @@ export default function SponsorView({
 }) {
   if (activeTab === 'dashboard') {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 text-xs">
         {/* Aggregates */}
-        <div className="bg-slate-900 border border-slate-800 p-6 rounded-lg flex items-center justify-between">
+        <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-6 rounded-2xl flex items-center justify-between shadow-[var(--shadow-card)]">
           <div>
-            <div className="text-slate-400 text-sm">Total Sponsorship Contributed</div>
-            <div className="text-3xl font-black text-emerald-400">${dashboardData.total_sponsored.toFixed(2)}</div>
+            <span className="text-[var(--text-secondary)] text-[10px] font-extrabold uppercase tracking-widest block">Total Sponsorship Contributed</span>
+            <span className="text-3xl font-black text-[var(--accent)] mt-1.5 block font-display">${dashboardData.total_sponsored.toFixed(2)}</span>
           </div>
-          <svg className="w-10 h-10 text-emerald-400/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
+          <Coins className="w-10 h-10 text-[var(--accent)] opacity-40 shrink-0" />
         </div>
 
         {/* Sponsorship history */}
-        <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-lg space-y-3">
-          <h3 className="font-semibold text-slate-200">Your Sponsorship Pledges</h3>
+        <Card>
+          <CardHeader className="mb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <History className="w-5 h-5 text-[var(--accent)]" />
+              Your Sponsorship Pledges
+            </CardTitle>
+          </CardHeader>
           {dashboardData.sponsorships.length === 0 ? (
-            <p className="text-slate-500 text-sm italic">You have not sponsored any tournament yet.</p>
+            <p className="text-[var(--text-muted)] text-xs italic py-4 text-center">You have not sponsored any tournament yet.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5 mt-2">
               {dashboardData.sponsorships.map(s => (
-                <div key={s.id} className="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center text-xs">
+                <div key={s.id} className="bg-[var(--bg-input)] p-4 rounded-xl border border-[var(--border-default)] flex justify-between items-center text-xs hover:border-[var(--border-card-hover)] transition-all">
                   <div>
-                    <span className="font-bold text-slate-300">{s.tournament_name}</span>
-                    <span className="block text-[10px] text-slate-500 uppercase font-mono">{s.tournament_status}</span>
+                    <span className="font-bold text-[var(--text-primary)]">{s.tournament_name}</span>
+                    <span className="block text-[10px] text-[var(--text-secondary)] uppercase font-mono mt-0.5">{s.tournament_status}</span>
                   </div>
-                  <span className="font-mono font-bold text-emerald-400">+ ${s.amount.toFixed(2)}</span>
+                  <span className="font-mono font-bold text-[var(--accent)]">+ ${s.amount.toFixed(2)}</span>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
       </div>
     );
   }
@@ -46,43 +55,48 @@ export default function SponsorView({
   if (activeTab === 'fund_tournament') {
     const fundedTourneys = tournaments.filter(t => t.is_approved);
     return (
-      <div className="space-y-6">
-        {/* Sponsor Tournaments list */}
-        <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-lg space-y-4">
-          <h3 className="font-bold text-lg text-slate-200">Sponsor Tournaments</h3>
-          <p className="text-slate-400 text-sm">Select an active tournament to provide financial sponsorships.</p>
+      <div className="space-y-6 text-xs">
+        <Card>
+          <CardHeader className="mb-4">
+            <CardTitle className="text-base flex items-center gap-2">
+              <HeartHandshake className="w-5 h-5 text-[var(--accent)]" />
+              Sponsor Tournaments
+            </CardTitle>
+            <p className="text-xs text-[var(--text-secondary)] mt-1">Select an active tournament to provide financial sponsorships.</p>
+          </CardHeader>
           
-          <div className="flex gap-2 items-center mb-3">
-            <label className="text-xs text-slate-400">Pledge Amount ($):</label>
+          <div className="flex gap-3 items-center mb-5 mt-2">
+            <label className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-extrabold">Pledge Amount ($):</label>
             <input
               type="number"
-              className="w-24 bg-slate-900 border border-slate-700 rounded px-2.5 py-1 text-sm text-slate-100 font-mono"
+              autoComplete="off"
+              className="w-32 rounded-xl px-3 py-1.5 text-xs font-mono"
               value={sponsorAmount}
               onChange={(e) => setSponsorAmount(e.target.value)}
             />
           </div>
 
           {fundedTourneys.length === 0 ? (
-            <p className="text-slate-500 text-sm italic">No active tournaments available for sponsorship at this time.</p>
+            <p className="text-[var(--text-muted)] text-xs italic py-4 text-center">No active tournaments available for sponsorship at this time.</p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {fundedTourneys.map(t => (
-                <div key={t.id} className="bg-slate-950 p-4 rounded border border-slate-800 flex flex-col justify-between gap-3 text-xs">
+                <div key={t.id} className="bg-[var(--bg-input)] p-4 rounded-xl border border-[var(--border-default)] flex flex-col justify-between gap-3 text-xs hover:border-[var(--border-card-hover)] transition-all">
                   <div>
-                    <div className="font-bold text-slate-300">{t.name}</div>
-                    <div className="text-slate-500 mt-1">Status: {t.status}</div>
+                    <div className="font-extrabold text-[var(--text-primary)] text-sm">{t.name}</div>
+                    <div className="text-[10px] text-[var(--text-secondary)] mt-1.5 uppercase font-semibold">Status: <Badge variant="primary">{t.status}</Badge></div>
                   </div>
-                  <button
+                  <Button
                     onClick={() => handleSponsorTournament(t.id)}
-                    className="bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-400 py-1.5 rounded cursor-pointer font-bold uppercase transition text-[10px]"
+                    className="w-full text-xs py-2 uppercase"
                   >
                     Fund Tournament
-                  </button>
+                  </Button>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </Card>
       </div>
     );
   }

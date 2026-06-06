@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Ban, UserCheck, Trash2 } from 'lucide-react';
 
 export default function SuperAdminView({
   activeTab,
@@ -309,31 +310,37 @@ export default function SuperAdminView({
                       <span className="text-amber-400 bg-amber-950/35 px-1.5 py-0.5 rounded">Pending/Blocked</span>
                     )}
                   </td>
-                  <td className="py-2 px-3 text-right">
+                  <td className="py-3 px-3 text-right">
                     <div className="flex justify-end items-center gap-2">
                       {u.role !== 'super_admin' && (
                         u.is_approved ? (
                           <button
+                            type="button"
                             onClick={() => handleBlockUser(u.id)}
-                            className="w-20 px-2 py-1 bg-amber-950 hover:bg-amber-900 text-amber-200 rounded border border-amber-800/60 text-center cursor-pointer transition duration-150 font-semibold"
+                            title="Block User"
+                            className="w-8 h-8 flex items-center justify-center bg-slate-850 hover:bg-slate-800 text-amber-400 rounded-lg border border-slate-700/60 cursor-pointer transition duration-150"
                           >
-                            Block
+                            <Ban className="w-4 h-4" />
                           </button>
                         ) : (
                           <button
+                            type="button"
                             onClick={() => handleUnblockUser(u.id)}
-                            className="w-20 px-2 py-1 bg-emerald-950 hover:bg-emerald-900 text-emerald-200 rounded border border-emerald-800/60 text-center cursor-pointer transition duration-150 font-semibold"
+                            title="Unblock User"
+                            className="w-8 h-8 flex items-center justify-center bg-emerald-950/60 hover:bg-emerald-900 text-emerald-400 rounded-lg border border-emerald-800/60 cursor-pointer transition duration-150"
                           >
-                            Unblock
+                            <UserCheck className="w-4 h-4" />
                           </button>
                         )
                       )}
                       {u.role !== 'super_admin' && (
                         <button
+                          type="button"
                           onClick={() => handleDeleteUser(u.id)}
-                          className="w-20 px-2 py-1 bg-red-950 hover:bg-red-900 text-red-200 rounded border border-red-900/60 text-center cursor-pointer transition duration-150 font-semibold"
+                          title="Delete User"
+                          className="w-8 h-8 flex items-center justify-center bg-red-950/60 hover:bg-red-900 text-red-400 rounded-lg border border-red-900/60 cursor-pointer transition duration-150"
                         >
-                          Delete
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>

@@ -1,54 +1,73 @@
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
+import { Button } from './ui/Button';
+import { Badge } from './ui/Badge';
+
 export default function LiveMatches({ matches, onSelectMatch }) {
   return (
-    <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-5 glass-panel space-y-4">
-      <h3 className="font-bold text-slate-200 flex items-center gap-2">
-        <span className="w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse"></span>
-        Live & Scheduled Matches
-      </h3>
+    <Card className="space-y-4">
+      <CardHeader className="flex justify-between items-center mb-2">
+        <CardTitle className="flex items-center gap-2 text-sm uppercase tracking-wider font-extrabold text-[var(--text-primary)]">
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75 animate-ping"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent)]"></span>
+          </span>
+          Live & Scheduled
+        </CardTitle>
+        <Badge variant="neutral" className="font-mono">
+          Total: {matches.length}
+        </Badge>
+      </CardHeader>
       
       {matches.length === 0 ? (
-        <p className="text-slate-500 text-xs italic">No matches scheduled at the moment.</p>
+        <p className="text-[var(--text-muted)] text-xs italic py-4 text-center">No matches scheduled at the moment.</p>
       ) : (
         <div className="space-y-3">
           {matches.map(m => (
-            <div key={m.id} className="bg-slate-900/60 border border-slate-800 p-3 rounded text-xs space-y-2">
+            <div key={m.id} className="bg-[var(--bg-input)] border border-[var(--border-default)] p-3 rounded-xl text-xs space-y-2.5 transition-all hover:border-[var(--border-card-hover)]">
               <div className="flex justify-between items-center text-[10px] uppercase font-mono">
-                <span className="text-slate-500">{m.tournament.name}</span>
-                <span className={`px-2 py-0.5 rounded font-bold ${m.status === 'completed' ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-900' : m.status === 'live' ? 'bg-rose-950/60 text-rose-400 border border-rose-900 animate-pulse' : 'bg-slate-800 text-slate-400 border border-slate-700'}`}>
+                <span className="text-[var(--text-secondary)] font-bold">{m.tournament.name}</span>
+                <Badge 
+                  variant={m.status === 'live' ? 'primary' : 'neutral'}
+                  glow={m.status === 'live'}
+                  oscillate={m.status === 'live'}
+                >
                   {m.status}
-                </span>
+                </Badge>
               </div>
 
-              <div className="font-semibold text-slate-200 flex justify-between">
+              <div className="font-bold text-[var(--text-primary)] flex justify-between">
                 <span>{m.team_a.name}</span>
-                <span className="font-mono">{m.team_a_runs}/{m.team_a_wickets} <span className="text-slate-500 text-[10px]">({m.team_a_overs} ov)</span></span>
+                <span className="font-mono">{m.team_a_runs}/{m.team_a_wickets} <span className="text-[var(--text-secondary)] text-[10px]">({m.team_a_overs} ov)</span></span>
               </div>
 
-              <div className="font-semibold text-slate-200 flex justify-between">
+              <div className="font-bold text-[var(--text-primary)] flex justify-between">
                 <span>{m.team_b.name}</span>
-                <span className="font-mono">{m.team_b_runs}/{m.team_b_wickets} <span className="text-slate-500 text-[10px]">({m.team_b_overs} ov)</span></span>
+                <span className="font-mono">{m.team_b_runs}/{m.team_b_wickets} <span className="text-[var(--text-secondary)] text-[10px]">({m.team_b_overs} ov)</span></span>
               </div>
 
               {m.status === 'completed' && m.winner && (
-                <div className="text-[10px] text-emerald-400 font-bold border-t border-slate-800 pt-1">
+                <div className="text-[10px] text-[var(--accent-text)] font-extrabold border-t border-[var(--border-default)] pt-2 flex items-center gap-1.5">
                   🏆 Winner: {m.winner.name}
                 </div>
               )}
 
               {onSelectMatch && (
-                <div className="border-t border-slate-850 pt-2 flex justify-end">
-                  <button
+                <div className="border-t border-[var(--border-default)] pt-2 flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => onSelectMatch(m)}
-                    className="px-2.5 py-0.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-sports-cyan text-[10px] font-bold rounded cursor-pointer transition"
+                    className="text-[10px] py-1 px-2.5 h-auto font-bold tracking-wider"
                   >
                     View Stats
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
           ))}
         </div>
       )}
-    </div>
-  )
+    </Card>
+  );
 }

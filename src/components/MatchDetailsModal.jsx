@@ -252,66 +252,66 @@ export default function MatchDetailsModal({ match, onClose }) {
   const teamBScorecard = generateScorecard(80, teamB.name, teamB.players, match.team_b_runs, match.team_b_wickets, match.team_b_overs, teamA.players);
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-800 max-w-4xl w-full rounded-2xl shadow-2xl overflow-hidden text-xs flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 overflow-y-auto">
+      <div className="bg-[var(--bg-panel)] border border-[var(--border-default)] max-w-4xl w-full rounded-2xl shadow-[var(--shadow-card)] overflow-hidden text-xs flex flex-col max-h-[90vh]">
         {/* Header Title */}
-        <div className="bg-slate-950 p-5 border-b border-slate-800 flex justify-between items-center shrink-0">
+        <div className="bg-[var(--bg-navbar)] p-5 border-b border-[var(--border-navbar)] flex justify-between items-center shrink-0">
           <div>
-            <h3 className="text-base font-bold text-slate-100 uppercase tracking-wide">Match Analysis Center</h3>
-            <p className="text-[10px] text-sports-cyan uppercase mt-0.5 font-mono">{match.tournament?.name || 'Tournament Matches'}</p>
+            <h3 className="text-base font-bold text-[var(--text-primary)] uppercase tracking-wide">Match Analysis Center</h3>
+            <p className="text-[10px] text-[var(--accent)] uppercase mt-0.5 font-mono">{match.tournament?.name || 'Tournament Matches'}</p>
           </div>
           <button 
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-200 text-lg font-bold p-1 cursor-pointer"
+            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-lg font-bold p-1 cursor-pointer"
           >
             &times;
           </button>
         </div>
 
         {/* Live / Finished Banner */}
-        <div className="bg-slate-950/40 p-4 border-b border-slate-800 shrink-0 flex flex-col sm:flex-row items-center justify-around gap-6">
+        <div className="bg-[var(--bg-card)] p-4 border-b border-[var(--border-default)] shrink-0 flex flex-col sm:flex-row items-center justify-around gap-6">
           {/* Team A */}
           <div className="text-center sm:text-right space-y-1">
-            <h4 className="font-extrabold text-sm text-slate-100">{teamA.name}</h4>
-            <div className="text-xl font-mono font-black text-slate-200">
+            <h4 className="font-extrabold text-sm text-[var(--text-primary)]">{teamA.name}</h4>
+            <div className="text-xl font-mono font-black text-[var(--text-primary)]">
               {match.team_a_runs}/{match.team_a_wickets}
-              <span className="text-[10px] text-slate-500 font-normal ml-1">({match.team_a_overs} ov)</span>
+              <span className="text-[10px] text-[var(--text-muted)] font-normal ml-1">({match.team_a_overs} ov)</span>
             </div>
           </div>
 
           <div className="flex flex-col items-center">
-            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+            <span className={`px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
               match.status === 'live' 
-                ? 'bg-red-950 text-red-400 border border-red-900/60 animate-pulse' 
+                ? 'bg-[var(--accent-glow)] text-[var(--accent)] border-[var(--border-navbar)] animate-pulse' 
                 : match.status === 'completed' 
-                ? 'bg-emerald-950 text-emerald-400 border border-emerald-900/60' 
-                : 'bg-slate-800 text-slate-400 border border-slate-700'
+                ? 'bg-[var(--success-bg)] text-[var(--success-text)] border-[var(--success-border)]' 
+                : 'bg-[var(--bg-input)] text-[var(--text-secondary)] border-[var(--border-default)]'
             }`}>
               {match.status}
             </span>
-            <span className="text-[10px] text-slate-500 font-mono mt-1">Match ID: #{matchId}</span>
+            <span className="text-[10px] text-[var(--text-muted)] font-mono mt-1">Match ID: #{matchId}</span>
           </div>
 
           {/* Team B */}
           <div className="text-center sm:text-left space-y-1">
-            <h4 className="font-extrabold text-sm text-slate-100">{teamB.name}</h4>
-            <div className="text-xl font-mono font-black text-slate-200">
+            <h4 className="font-extrabold text-sm text-[var(--text-primary)]">{teamB.name}</h4>
+            <div className="text-xl font-mono font-black text-[var(--text-primary)]">
               {match.team_b_runs}/{match.team_b_wickets}
-              <span className="text-[10px] text-slate-500 font-normal ml-1">({match.team_b_overs} ov)</span>
+              <span className="text-[10px] text-[var(--text-muted)] font-normal ml-1">({match.team_b_overs} ov)</span>
             </div>
           </div>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex bg-slate-950/80 border-b border-slate-800 p-1.5 gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
+        <div className="flex bg-[var(--bg-navbar)] border-b border-[var(--border-navbar)] p-1.5 gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
           {['summary', 'scorecard', 'stats'].map(t => (
             <button
               key={t}
               onClick={() => setActiveSubTab(t)}
               className={`px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-wider transition cursor-pointer ${
                 activeSubTab === t 
-                  ? 'bg-sports-cyan/15 text-sports-cyan border border-sports-cyan/30' 
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
+                  ? 'bg-[var(--accent-glow)] text-[var(--accent)] border border-[var(--border-navbar)]' 
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sidebar-hover)]'
               }`}
             >
               {t.replace('_', ' ')}
@@ -321,7 +321,7 @@ export default function MatchDetailsModal({ match, onClose }) {
 
         {/* Nested Stats Tab Selection */}
         {activeSubTab === 'stats' && (
-          <div className="flex bg-slate-900 border-b border-slate-800 p-1.5 gap-1.5 overflow-x-auto shrink-0 scrollbar-none justify-center">
+          <div className="flex bg-[var(--bg-panel)] border-b border-[var(--border-default)] p-1.5 gap-1.5 overflow-x-auto shrink-0 scrollbar-none justify-center">
             {[
               { id: 'wagon_wheel', label: 'Wagon Wheel' },
               { id: 'over_comparison', label: 'Over Comparison' },
@@ -332,8 +332,8 @@ export default function MatchDetailsModal({ match, onClose }) {
                 onClick={() => setStatsTab(sub.id)}
                 className={`px-3 py-1.5 rounded-md text-[9px] font-extrabold uppercase tracking-widest transition cursor-pointer ${
                   statsTab === sub.id 
-                    ? 'bg-sports-cyan text-slate-100 shadow-sm' 
-                    : 'text-slate-500 hover:text-slate-200 hover:bg-slate-950/45'
+                    ? 'bg-[var(--accent)] text-[var(--text-inverse)] shadow-sm' 
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sidebar-hover)]'
                 }`}
               >
                 {sub.label}
@@ -343,64 +343,64 @@ export default function MatchDetailsModal({ match, onClose }) {
         )}
 
         {/* Content Container */}
-        <div className="flex-1 overflow-y-auto p-6 bg-slate-950/20">
+        <div className="flex-1 overflow-y-auto p-6 bg-transparent">
           
           {/* Subtab: SUMMARY */}
           {activeSubTab === 'summary' && (
             <div className="space-y-6">
               {/* Outcome Banner */}
               {match.status === 'completed' && (
-                <div className="bg-emerald-950/30 border border-emerald-900/50 p-4 rounded-xl flex items-center justify-between">
+                <div className="bg-[var(--success-bg)] border border-[var(--success-border)] p-4 rounded-xl flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider font-mono">Official Outcome</span>
-                    <h4 className="text-slate-100 font-bold text-sm mt-0.5">
+                    <span className="text-[10px] text-[var(--success-text)] font-bold uppercase tracking-wider font-mono">Official Outcome</span>
+                    <h4 className="text-[var(--text-primary)] font-bold text-sm mt-0.5">
                       🏆 {match.winner ? `${match.winner.name} won the match` : 'Draw / No Outcome declared'}
                     </h4>
                   </div>
-                  <span className="bg-emerald-500/10 text-emerald-400 font-mono text-[10px] px-2.5 py-1 rounded-full border border-emerald-500/25">Finished</span>
+                  <span className="bg-[var(--success-bg)] text-[var(--success-text)] font-mono text-[10px] px-2.5 py-1 rounded-full border border-[var(--success-border)]">Finished</span>
                 </div>
               )}
 
               {/* Match statistics key indicators */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-850 text-center">
-                  <span className="text-slate-500 font-medium block">Team A Run Rate</span>
-                  <span className="text-base font-extrabold text-slate-200 mt-1 block font-mono">
+                <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-default)] text-center">
+                  <span className="text-[var(--text-secondary)] font-medium block">Team A Run Rate</span>
+                  <span className="text-base font-extrabold text-[var(--text-primary)] mt-1 block font-mono">
                     {match.team_a_overs > 0 ? (match.team_a_runs / match.team_a_overs).toFixed(2) : '0.00'}
                   </span>
                 </div>
-                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-850 text-center">
-                  <span className="text-slate-500 font-medium block">Team B Run Rate</span>
-                  <span className="text-base font-extrabold text-slate-200 mt-1 block font-mono">
+                <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-default)] text-center">
+                  <span className="text-[var(--text-secondary)] font-medium block">Team B Run Rate</span>
+                  <span className="text-base font-extrabold text-[var(--text-primary)] mt-1 block font-mono">
                     {match.team_b_overs > 0 ? (match.team_b_runs / match.team_b_overs).toFixed(2) : '0.00'}
                   </span>
                 </div>
-                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-850 text-center">
-                  <span className="text-slate-500 font-medium block">Match Format</span>
-                  <span className="text-base font-extrabold text-sports-cyan mt-1 block uppercase font-mono">
+                <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-default)] text-center">
+                  <span className="text-[var(--text-secondary)] font-medium block">Match Format</span>
+                  <span className="text-base font-extrabold text-[var(--accent)] mt-1 block uppercase font-mono">
                     {match.tournament?.overs ? `${match.tournament.overs} Overs` : 'T20 Limit'}
                   </span>
                 </div>
-                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-850 text-center">
-                  <span className="text-slate-500 font-medium block">Venue Pitch</span>
-                  <span className="text-base font-extrabold text-indigo-400 mt-1 block truncate">
+                <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-default)] text-center">
+                  <span className="text-[var(--text-secondary)] font-medium block">Venue Pitch</span>
+                  <span className="text-base font-extrabold text-[var(--text-primary)] mt-1 block truncate">
                     {match.tournament?.ground_name || 'Standard Ground'}
                   </span>
                 </div>
               </div>
 
               {/* Match details & Scorer info */}
-              <div className="bg-slate-900/40 p-5 rounded-xl border border-slate-850 space-y-3">
-                <h4 className="font-bold text-slate-200">Official Match Personnel</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-slate-400">
-                  <div className="bg-slate-950/40 p-3 rounded border border-slate-900">
-                    <span className="text-[10px] text-slate-500 block">Assigned Scorer / Umpire</span>
-                    <span className="font-semibold text-slate-300 block mt-1">👤 {match.scorer?.full_name || 'Unassigned Official'}</span>
-                    <span className="text-[10px] text-slate-500 block font-mono mt-0.5">{match.scorer?.email || 'N/A'}</span>
+              <div className="bg-[var(--bg-card)] p-5 rounded-xl border border-[var(--border-default)] space-y-3">
+                <h4 className="font-bold text-[var(--text-primary)]">Official Match Personnel</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[var(--text-secondary)]">
+                  <div className="bg-[var(--bg-input)] p-3 rounded-xl border border-[var(--border-default)]">
+                    <span className="text-[10px] text-[var(--text-muted)] block">Assigned Scorer / Umpire</span>
+                    <span className="font-semibold text-[var(--text-primary)] block mt-1">👤 {match.scorer?.full_name || 'Unassigned Official'}</span>
+                    <span className="text-[10px] text-[var(--text-muted)] block font-mono mt-0.5">{match.scorer?.email || 'N/A'}</span>
                   </div>
-                  <div className="bg-slate-950/40 p-3 rounded border border-slate-900">
-                    <span className="text-[10px] text-slate-500 block">Supervising Federation</span>
-                    <span className="font-semibold text-slate-300 block mt-1">🏅 {match.tournament?.federation?.name || 'Authorized Cricket Council'}</span>
+                  <div className="bg-[var(--bg-input)] p-3 rounded-xl border border-[var(--border-default)]">
+                    <span className="text-[10px] text-[var(--text-muted)] block">Supervising Federation</span>
+                    <span className="font-semibold text-[var(--text-primary)] block mt-1">🏅 {match.tournament?.federation?.name || 'Authorized Cricket Council'}</span>
                   </div>
                 </div>
               </div>
@@ -424,8 +424,8 @@ export default function MatchDetailsModal({ match, onClose }) {
                     onClick={() => setActiveInningsTab(0)}
                     className={`flex-1 py-3 rounded-xl border text-center transition cursor-pointer ${
                       activeInningsTab === 0 
-                        ? 'bg-sports-cyan/10 border-sports-cyan/35 text-sports-cyan font-bold shadow-sm' 
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-950/45'
+                        ? 'bg-[var(--accent-glow)] border-[var(--accent)] text-[var(--accent)] font-bold shadow-sm' 
+                        : 'bg-[var(--bg-card)] border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                     }`}
                   >
                     <div className="text-xs uppercase tracking-wider font-extrabold">{teamA.name}</div>
@@ -435,8 +435,8 @@ export default function MatchDetailsModal({ match, onClose }) {
                     onClick={() => setActiveInningsTab(1)}
                     className={`flex-1 py-3 rounded-xl border text-center transition cursor-pointer ${
                       activeInningsTab === 1 
-                        ? 'bg-sports-cyan/10 border-sports-cyan/35 text-sports-cyan font-bold shadow-sm' 
-                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-950/45'
+                        ? 'bg-[var(--accent-glow)] border-[var(--accent)] text-[var(--accent)] font-bold shadow-sm' 
+                        : 'bg-[var(--bg-card)] border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
                     }`}
                   >
                     <div className="text-xs uppercase tracking-wider font-extrabold">{teamB.name}</div>
@@ -445,33 +445,33 @@ export default function MatchDetailsModal({ match, onClose }) {
                 </div>
 
                 {/* Glassmorphic Total Score HUD */}
-                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-850 flex flex-col justify-between sm:flex-row sm:items-center gap-3">
+                <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-default)] flex flex-col justify-between sm:flex-row sm:items-center gap-3">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-slate-100 font-mono tracking-tighter">
+                    <span className="text-2xl font-black text-[var(--text-primary)] font-mono tracking-tighter">
                       {currentInningsRuns}
-                      <span className="text-slate-400 text-base font-normal">/{currentInningsWickets}</span>
+                      <span className="text-[var(--text-secondary)] text-base font-normal">/{currentInningsWickets}</span>
                     </span>
-                    <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] font-mono">
+                    <span className="text-[var(--text-muted)] font-bold uppercase tracking-wider text-[10px] font-mono">
                       {currentInningsOvers} OVERS
                     </span>
                   </div>
                   <div className="flex items-center gap-4 text-[10px] font-bold font-mono">
-                    <span className="text-sports-cyan uppercase tracking-wider">CRR: {displayCRR}</span>
-                    <span className="text-slate-500 uppercase tracking-wider border-l border-slate-800 pl-4">
+                    <span className="text-[var(--accent)] uppercase tracking-wider">CRR: {displayCRR}</span>
+                    <span className="text-[var(--text-secondary)] uppercase tracking-wider border-l border-[var(--border-default)] pl-4">
                       {activeInningsTab === 0 ? 'First Innings Scorecard' : 'Second Innings Scorecard'}
                     </span>
                   </div>
                 </div>
 
                 {/* Batting Stats Section */}
-                <div className="bg-slate-900/40 border border-slate-850 p-4 rounded-xl space-y-3">
-                  <h4 className="text-sports-cyan font-black text-[10px] uppercase tracking-widest italic flex items-center gap-1.5">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-4 rounded-xl space-y-3">
+                  <h4 className="text-[var(--accent)] font-black text-[10px] uppercase tracking-widest italic flex items-center gap-1.5">
                     🏏 BATTING STATS
                   </h4>
-                  <div className="overflow-hidden border border-slate-850/60 rounded-lg">
+                  <div className="overflow-hidden border border-[var(--border-default)] rounded-xl">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-slate-855 text-slate-500 font-bold uppercase tracking-wider text-[9px] bg-slate-950/40 font-mono">
+                        <tr className="border-b border-[var(--border-default)] text-[var(--text-secondary)] font-bold uppercase tracking-wider text-[9px] bg-[var(--bg-navbar)] font-mono">
                           <th className="py-2.5 px-3.5">Batter</th>
                           <th className="py-2.5 px-3.5 text-right">R</th>
                           <th className="py-2.5 px-3.5 text-right">B</th>
@@ -480,37 +480,37 @@ export default function MatchDetailsModal({ match, onClose }) {
                           <th className="py-2.5 px-3.5 text-right">SR</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-900/60">
+                      <tbody className="divide-y divide-[var(--border-default)]">
                         {currentInningsData.batting.map((p, i) => {
                           const sr = p.balls > 0 ? ((p.runs / p.balls) * 100).toFixed(1) : '0.0';
                           return (
-                            <tr key={i} className="hover:bg-slate-900/10">
+                            <tr key={i} className="hover:bg-[var(--bg-sidebar-hover)]">
                               <td className="py-2.5 px-3.5">
-                                <div className="font-bold text-slate-200">{p.name}</div>
-                                <div className="text-[9px] text-slate-500 italic mt-0.5">{p.status}</div>
+                                <div className="font-bold text-[var(--text-primary)]">{p.name}</div>
+                                <div className="text-[9px] text-[var(--text-muted)] italic mt-0.5">{p.status}</div>
                               </td>
-                              <td className="py-2.5 px-3.5 text-right font-mono font-extrabold text-slate-100">{p.runs}</td>
-                              <td className="py-2.5 px-3.5 text-right font-mono text-slate-400">{p.balls}</td>
-                              <td className="py-2.5 px-3.5 text-right font-mono text-slate-400">{p.fours}</td>
-                              <td className="py-2.5 px-3.5 text-right font-mono text-slate-400">{p.sixes}</td>
-                              <td className="py-2.5 px-3.5 text-right font-mono text-emerald-400 font-bold">{sr}</td>
+                              <td className="py-2.5 px-3.5 text-right font-mono font-extrabold text-[var(--text-primary)]">{p.runs}</td>
+                              <td className="py-2.5 px-3.5 text-right font-mono text-[var(--text-secondary)]">{p.balls}</td>
+                              <td className="py-2.5 px-3.5 text-right font-mono text-[var(--text-secondary)]">{p.fours}</td>
+                              <td className="py-2.5 px-3.5 text-right font-mono text-[var(--text-secondary)]">{p.sixes}</td>
+                              <td className="py-2.5 px-3.5 text-right font-mono text-[var(--accent)] font-bold">{sr}</td>
                             </tr>
                           );
                         })}
                         {/* Extras Row */}
-                        <tr className="bg-slate-950/20 font-mono">
-                          <td className="py-3 px-3.5 font-bold text-slate-400 uppercase text-[10px]">Extras</td>
-                          <td colSpan="5" className="py-3 px-3.5 text-right text-slate-200 text-[10px]">
+                        <tr className="bg-[var(--bg-sidebar-hover)] font-mono">
+                          <td className="py-3 px-3.5 font-bold text-[var(--text-secondary)] uppercase text-[10px]">Extras</td>
+                          <td colSpan="5" className="py-3 px-3.5 text-right text-[var(--text-primary)] text-[10px]">
                             <span className="font-bold">{currentInningsData.extras}</span>
-                            <span className="text-slate-500 font-normal ml-1.5">{currentInningsData.extrasDetail}</span>
+                            <span className="text-[var(--text-muted)] font-normal ml-1.5">{currentInningsData.extrasDetail}</span>
                           </td>
                         </tr>
                         {/* Total Score Row */}
-                        <tr className="bg-slate-950/40 font-mono border-t border-slate-800">
-                          <td className="py-3.5 px-3.5 font-black text-slate-100 uppercase text-[10px]">Total Score</td>
-                          <td colSpan="5" className="py-3.5 px-3.5 text-right text-emerald-400 font-black text-sm italic">
+                        <tr className="bg-[var(--bg-card)] font-mono border-t border-[var(--border-default)]">
+                          <td className="py-3.5 px-3.5 font-black text-[var(--text-primary)] uppercase text-[10px]">Total Score</td>
+                          <td colSpan="5" className="py-3.5 px-3.5 text-right text-[var(--accent)] font-black text-sm italic">
                             {currentInningsRuns}/{currentInningsWickets}
-                            <span className="text-slate-500 text-[10px] font-bold uppercase not-italic ml-1">
+                            <span className="text-[var(--text-muted)] text-[10px] font-bold uppercase not-italic ml-1">
                               ({currentInningsOvers} ov)
                             </span>
                           </td>
@@ -521,14 +521,14 @@ export default function MatchDetailsModal({ match, onClose }) {
                 </div>
 
                 {/* Bowling Stats Section */}
-                <div className="bg-slate-900/40 border border-slate-855 p-4 rounded-xl space-y-3">
-                  <h4 className="text-indigo-400 font-black text-[10px] uppercase tracking-widest italic flex items-center gap-1.5">
+                <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-4 rounded-xl space-y-3">
+                  <h4 className="text-[var(--accent)] font-black text-[10px] uppercase tracking-widest italic flex items-center gap-1.5">
                     🎯 BOWLING STATS
                   </h4>
-                  <div className="overflow-hidden border border-slate-850/60 rounded-lg">
+                  <div className="overflow-hidden border border-[var(--border-default)] rounded-xl">
                     <table className="w-full text-left border-collapse text-xs">
                       <thead>
-                        <tr className="border-b border-slate-855 text-slate-500 font-bold uppercase tracking-wider text-[9px] bg-slate-950/40 font-mono">
+                        <tr className="border-b border-[var(--border-default)] text-[var(--text-secondary)] font-bold uppercase tracking-wider text-[9px] bg-[var(--bg-navbar)] font-mono">
                           <th className="py-2.5 px-3.5">Bowler</th>
                           <th className="py-2.5 px-3.5 text-right">O</th>
                           <th className="py-2.5 px-3.5 text-right">M</th>
@@ -537,17 +537,17 @@ export default function MatchDetailsModal({ match, onClose }) {
                           <th className="py-2.5 px-3.5 text-right">ECO</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-900/60 font-mono">
+                      <tbody className="divide-y divide-[var(--border-default)] font-mono">
                         {currentInningsData.bowling.map((bowl, i) => {
                           const eco = bowl.overs > 0 ? (bowl.runs / bowl.overs).toFixed(2) : '0.00';
                           return (
-                            <tr key={i} className="hover:bg-slate-900/10">
-                              <td className="py-2.5 px-3.5 font-bold text-slate-200 font-sans">{bowl.name}</td>
-                              <td className="py-2.5 px-3.5 text-right text-slate-100">{bowl.overs.toFixed(1)}</td>
-                              <td className="py-2.5 px-3.5 text-right text-slate-400">{bowl.maidens}</td>
-                              <td className="py-2.5 px-3.5 text-right text-slate-400">{bowl.runs}</td>
-                              <td className="py-2.5 px-3.5 text-right font-extrabold text-slate-100">{bowl.wickets}</td>
-                              <td className="py-2.5 px-3.5 text-right text-indigo-400 font-bold">{eco}</td>
+                            <tr key={i} className="hover:bg-[var(--bg-sidebar-hover)]">
+                              <td className="py-2.5 px-3.5 font-bold text-[var(--text-primary)] font-sans">{bowl.name}</td>
+                              <td className="py-2.5 px-3.5 text-right text-[var(--text-primary)]">{bowl.overs.toFixed(1)}</td>
+                              <td className="py-2.5 px-3.5 text-right text-[var(--text-secondary)]">{bowl.maidens}</td>
+                              <td className="py-2.5 px-3.5 text-right text-[var(--text-secondary)]">{bowl.runs}</td>
+                              <td className="py-2.5 px-3.5 text-right font-extrabold text-[var(--text-primary)]">{bowl.wickets}</td>
+                              <td className="py-2.5 px-3.5 text-right text-[var(--accent)] font-bold">{eco}</td>
                             </tr>
                           );
                         })}
@@ -563,22 +563,22 @@ export default function MatchDetailsModal({ match, onClose }) {
           {/* Subtab: WAGON WHEEL */}
           {activeSubTab === 'stats' && statsTab === 'wagon_wheel' && (
             <div className="space-y-6">
-              <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl flex flex-col md:flex-row gap-6 items-center justify-center">
+              <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-5 rounded-2xl flex flex-col md:flex-row gap-6 items-center justify-center">
                 {/* Visual Field SVG representation */}
-                <div className="relative w-[300px] h-[300px] bg-emerald-950/20 border border-emerald-800/65 rounded-full flex items-center justify-center overflow-hidden">
+                <div className="relative w-[300px] h-[300px] bg-[var(--bg-page)] border border-[var(--border-default)] rounded-full flex items-center justify-center overflow-hidden">
                   {/* Outer circle line */}
-                  <div className="absolute w-[280px] h-[280px] border border-dashed border-emerald-800/40 rounded-full"></div>
+                  <div className="absolute w-[280px] h-[280px] border border-dashed border-[var(--border-default)] rounded-full"></div>
                   {/* 30 yard inner circle */}
-                  <div className="absolute w-[160px] h-[160px] border border-emerald-800/30 rounded-full"></div>
-                  {/* Center pitch pitch box */}
-                  <div className="absolute w-[16px] h-[40px] bg-amber-800/25 border border-amber-800/40 rounded-sm"></div>
+                  <div className="absolute w-[160px] h-[160px] border border-[var(--border-default)] rounded-full"></div>
+                  {/* Center pitch box */}
+                  <div className="absolute w-[16px] h-[40px] bg-[var(--bg-panel)] border border-[var(--border-default)] rounded-sm"></div>
 
                   {/* Draw points */}
                   {filteredWagonPoints.map((pt, index) => {
-                    let dotColor = '#ca8a04'; // single
-                    if (pt.type === 'four') dotColor = '#38bdf8'; // four
-                    if (pt.type === 'six') dotColor = '#f43f5e'; // six
-                    if (pt.type === 'wicket') dotColor = '#ffffff'; // wicket
+                    let dotColor = '#888888'; // single: muted grey
+                    if (pt.type === 'four') dotColor = '#AA8C2C'; // four: dark gold
+                    if (pt.type === 'six') dotColor = '#D4AF37'; // six: bright gold
+                    if (pt.type === 'wicket') dotColor = '#F5F5F5'; // wicket: off-white
                     
                     return (
                       <div
@@ -597,8 +597,8 @@ export default function MatchDetailsModal({ match, onClose }) {
 
                 {/* Filters & Information panel */}
                 <div className="flex-1 space-y-4 max-w-sm w-full">
-                  <h4 className="font-bold text-slate-200">Interactive Shot Distribution</h4>
-                  <p className="text-slate-400 text-xs">Simulated batting shot directions on field. Filter points below to inspect angles:</p>
+                  <h4 className="font-bold text-[var(--text-primary)]">Interactive Shot Distribution</h4>
+                  <p className="text-[var(--text-secondary)] text-xs font-semibold">Simulated batting shot directions on field. Filter points below to inspect angles:</p>
                   
                   {/* Filter selector */}
                   <div className="flex flex-wrap gap-2 pt-2">
@@ -608,8 +608,8 @@ export default function MatchDetailsModal({ match, onClose }) {
                         onClick={() => setWagonFilter(f)}
                         className={`px-3 py-1.5 rounded border text-[10px] font-semibold uppercase tracking-wider transition cursor-pointer ${
                           wagonFilter === f 
-                            ? 'bg-sports-cyan text-slate-950 border-sports-cyan' 
-                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
+                            ? 'bg-[var(--accent)] text-[var(--text-inverse)] border-[var(--accent)] font-bold' 
+                            : 'bg-[var(--bg-input)] border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                         }`}
                       >
                         {f}
@@ -618,22 +618,22 @@ export default function MatchDetailsModal({ match, onClose }) {
                   </div>
 
                   {/* Legend list */}
-                  <div className="space-y-2 border-t border-slate-850 pt-4 font-mono text-[10px]">
+                  <div className="space-y-2 border-t border-[var(--border-default)] pt-4 font-mono text-[10px]">
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                      <span className="text-slate-400">Singles, Doubles & Triples</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#888888]"></span>
+                      <span className="text-[var(--text-secondary)] font-semibold">Singles, Doubles & Triples</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
-                      <span className="text-slate-400">Four Boundaries (4s)</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#AA8C2C]"></span>
+                      <span className="text-[var(--text-secondary)] font-semibold">Four Boundaries (4s)</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
-                      <span className="text-slate-400">Six Boundaries (6s)</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]"></span>
+                      <span className="text-[var(--text-secondary)] font-semibold">Six Boundaries (6s)</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-800"></span>
-                      <span className="text-slate-400">Wickets Felled</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#F5F5F5] border border-[var(--border-default)]"></span>
+                      <span className="text-[var(--text-secondary)] font-semibold">Wickets Felled</span>
                     </div>
                   </div>
                 </div>
@@ -645,9 +645,9 @@ export default function MatchDetailsModal({ match, onClose }) {
           {activeSubTab === 'stats' && statsTab === 'over_comparison' && (
             <div className="space-y-6">
               {/* Over comparison charts (side-by-side RPO representation) */}
-              <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl space-y-4">
-                <h4 className="font-bold text-slate-200">Over-by-Over Runs Comparison</h4>
-                <p className="text-slate-400 text-xs">Comparison of runs scored in individual overs. Displays up to the total overs bowled in this match.</p>
+              <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-5 rounded-xl space-y-4">
+                <h4 className="font-bold text-[var(--text-primary)]">Over-by-Over Runs Comparison</h4>
+                <p className="text-[var(--text-secondary)] text-xs font-semibold">Comparison of runs scored in individual overs. Displays up to the total overs bowled in this match.</p>
 
                 <div className="space-y-3 pt-2">
                   {Array.from({ length: Math.max(teamAOverRuns.length, teamBOverRuns.length) }).map((_, index) => {
@@ -657,27 +657,27 @@ export default function MatchDetailsModal({ match, onClose }) {
 
                     return (
                       <div key={index} className="flex items-center gap-4 text-[10px] font-mono">
-                        <span className="w-14 text-slate-400 font-bold text-right">Over {overNum}</span>
+                        <span className="w-14 text-[var(--text-secondary)] font-bold text-right">Over {overNum}</span>
                         
                         <div className="flex-1 flex flex-col gap-1.5">
                           {/* Team A Over Run Bar */}
                           <div className="flex items-center gap-2">
                             <div 
                               style={{ width: `${Math.min(100, (runsA / 18) * 100)}%` }} 
-                              className="h-2.5 bg-sports-cyan rounded-sm min-w-[4px]"
+                              className="h-2.5 bg-[var(--accent)] rounded-sm min-w-[4px]"
                             ></div>
-                            <span className="text-slate-300 font-bold">{runsA} runs</span>
-                            <span className="text-slate-500 text-[8px] uppercase">{teamA.name.substring(0, 3)}</span>
+                            <span className="text-[var(--text-primary)] font-bold">{runsA} runs</span>
+                            <span className="text-[var(--text-muted)] text-[8px] uppercase">{teamA.name.substring(0, 3)}</span>
                           </div>
                           
                           {/* Team B Over Run Bar */}
                           <div className="flex items-center gap-2">
                             <div 
                               style={{ width: `${Math.min(100, (runsB / 18) * 100)}%` }} 
-                              className="h-2.5 bg-indigo-500 rounded-sm min-w-[4px]"
+                              className="h-2.5 bg-[var(--text-secondary)] rounded-sm min-w-[4px]"
                             ></div>
-                            <span className="text-slate-300 font-bold">{runsB} runs</span>
-                            <span className="text-slate-500 text-[8px] uppercase">{teamB.name.substring(0, 3)}</span>
+                            <span className="text-[var(--text-primary)] font-bold">{runsB} runs</span>
+                            <span className="text-[var(--text-muted)] text-[8px] uppercase">{teamB.name.substring(0, 3)}</span>
                           </div>
                         </div>
                       </div>
@@ -692,9 +692,9 @@ export default function MatchDetailsModal({ match, onClose }) {
           {activeSubTab === 'stats' && statsTab === 'run_comparison' && (
             <div className="space-y-6">
               {/* Cumulative Run Comparison progression */}
-              <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl space-y-4">
-                <h4 className="font-bold text-slate-200">Cumulative Innings Progression</h4>
-                <p className="text-slate-400 text-xs">Line-graph simulation comparison of cumulative scores over-by-over.</p>
+              <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-5 rounded-xl space-y-4">
+                <h4 className="font-bold text-[var(--text-primary)]">Cumulative Innings Progression</h4>
+                <p className="text-[var(--text-secondary)] text-xs font-semibold">Line-graph simulation comparison of cumulative scores over-by-over.</p>
 
                 <div className="space-y-3.5 pt-2">
                   {Array.from({ length: Math.max(teamACumulative.length, teamBCumulative.length) }).map((_, index) => {
@@ -704,16 +704,16 @@ export default function MatchDetailsModal({ match, onClose }) {
 
                     return (
                       <div key={index} className="flex items-center gap-4 text-[10px] font-mono">
-                        <span className="w-14 text-slate-400 font-bold text-right">Over {overNum}</span>
+                        <span className="w-14 text-[var(--text-secondary)] font-bold text-right">Over {overNum}</span>
                         
                         <div className="flex-1 grid grid-cols-2 gap-4">
-                          <div className="bg-slate-950/40 p-2.5 rounded border border-slate-900 flex justify-between items-center">
-                            <span className="text-slate-500 uppercase text-[9px]">{teamA.name.substring(0, 3)}</span>
-                            <span className="font-bold text-sports-cyan">{scoreA} runs</span>
+                          <div className="bg-[var(--bg-input)] p-2.5 rounded-xl border border-[var(--border-default)] flex justify-between items-center">
+                            <span className="text-[var(--text-muted)] uppercase text-[9px]">{teamA.name.substring(0, 3)}</span>
+                            <span className="font-bold text-[var(--accent)]">{scoreA} runs</span>
                           </div>
-                          <div className="bg-slate-950/40 p-2.5 rounded border border-slate-900 flex justify-between items-center">
-                            <span className="text-slate-500 uppercase text-[9px]">{teamB.name.substring(0, 3)}</span>
-                            <span className="font-bold text-indigo-400">{scoreB} runs</span>
+                          <div className="bg-[var(--bg-input)] p-2.5 rounded-xl border border-[var(--border-default)] flex justify-between items-center">
+                            <span className="text-[var(--text-muted)] uppercase text-[9px]">{teamB.name.substring(0, 3)}</span>
+                            <span className="font-bold text-[var(--text-primary)]">{scoreB} runs</span>
                           </div>
                         </div>
                       </div>
@@ -727,10 +727,10 @@ export default function MatchDetailsModal({ match, onClose }) {
         </div>
 
         {/* Footer actions */}
-        <div className="bg-slate-950 p-4 border-t border-slate-800 flex justify-end shrink-0">
+        <div className="bg-[var(--bg-navbar)] p-4 border-t border-[var(--border-navbar)] flex justify-end shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 font-bold uppercase tracking-wider transition cursor-pointer"
+            className="px-5 py-2.5 rounded-xl bg-[var(--bg-input)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-default)] text-[var(--text-primary)] font-bold uppercase tracking-wider transition cursor-pointer"
           >
             Close Viewer
           </button>

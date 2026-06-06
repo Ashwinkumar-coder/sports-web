@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react'
+import { useTheme } from './hooks/useTheme'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Badge } from './components/ui/Badge'
 
 // Import modular components
 import Auth from './components/Auth'
@@ -12,11 +15,14 @@ import ScorerView from './components/ScorerView'
 import LiveMatches from './components/LiveMatches'
 import Mailbox from './components/Mailbox'
 import MatchDetailsModal from './components/MatchDetailsModal'
+import Navbar from './components/Navbar'
 
 // Import API services
 import { api } from './services/api'
 
 function App() {
+  const { theme, toggle: toggleTheme } = useTheme()
+
   // Route detection for Super Admin
   const isAdminPath = window.location.pathname === '/admin'
 
@@ -178,11 +184,13 @@ function App() {
     }
   }, [token, user])
 
-  // Load and poll matches for Live Matches widget (public)
+  // Load and poll matches for Live Matches widget (requires auth)
   useEffect(() => {
+    if (!token) return // skip polling if not authenticated
+
     const fetchMatchesOnly = async () => {
       try {
-        const matchData = await api.getMatches(token || '')
+        const matchData = await api.getMatches(token)
         setMatches(matchData)
       } catch (e) {
         console.error(e)
@@ -300,6 +308,10 @@ function App() {
         throw new Error('Access Denied: Super Admin must log in via the Admin Portal.')
       }
 
+      if (['player', 'coach', 'sponsor', 'scorer'].includes(profile.role)) {
+        throw new Error('Access Denied: Access to the web portal is restricted to Administrators only.')
+      }
+
       setToken(data.access_token)
       setUser(profile)
       setSuccessMsg('Successfully logged in!')
@@ -315,6 +327,9 @@ function App() {
     setLoading(true)
     setErrorMsg('')
     try {
+      if (['player', 'coach', 'sponsor', 'scorer'].includes(regForm.role)) {
+        throw new Error('Access Denied: Registration is restricted on this web portal.')
+      }
       const body = {
         email: regForm.email,
         password: regForm.password,
@@ -708,109 +723,119 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col font-sans">
+    <div className="min-h-screen flex flex-col bg-[var(--bg-page)] text-[var(--text-primary)] transition-all duration-300">
 
-      {/* Header */}
-      <header className="bg-slate-950 border-b border-slate-800 p-4 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <svg className="w-8 h-8 text-sports-cyan text-sports-glow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span className="text-xl font-bold tracking-wider text-slate-100 uppercase">
-              Sports<span className="text-sports-cyan">Cricket</span>
-            </span>
-          </div>
-
-          {user && (
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <div className="text-sm font-semibold text-slate-200">{user.full_name}</div>
-                <div className="text-xs text-sports-cyan font-mono uppercase">{user.role.replace('_', ' ')}</div>
-              </div>
-              <button onClick={logout} className="bg-red-950/40 hover:bg-red-900/40 border border-red-900/50 hover:border-red-600 text-red-400 text-xs px-3 py-1.5 rounded transition duration-200 cursor-pointer">
-                Sign Out
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
+      <Navbar user={user} logout={logout} theme={theme} onToggleTheme={toggleTheme} />
 
       {/* Toast Alerts */}
-      <div className="max-w-7xl w-full mx-auto px-4 mt-4">
-        {errorMsg && (
-          <div className="bg-red-950/40 border-l-4 border-red-500 text-red-200 p-4 rounded-r glass-panel mb-4 flex items-center justify-between">
-            <div>
-              <span className="font-semibold">Error:</span> {errorMsg}
-            </div>
-            <button onClick={() => setErrorMsg('')} className="text-red-400 hover:text-red-200 text-lg">&times;</button>
-          </div>
-        )}
-        {successMsg && (
-          <div className="bg-emerald-950/40 border-l-4 border-emerald-500 text-emerald-200 p-4 rounded-r glass-panel mb-4 flex items-center justify-between">
-            <div>
-              <span className="font-semibold">Success:</span> {successMsg}
-            </div>
-            <button onClick={() => setSuccessMsg('')} className="text-emerald-400 hover:text-emerald-200 text-lg">&times;</button>
-          </div>
-        )}
+      <div className="max-w-7xl w-full mx-auto px-6 mt-4">
+        <AnimatePresence>
+          {errorMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-[var(--error-bg)] border border-[var(--error-border)] text-[var(--error-text)] p-4 rounded-xl shadow-[var(--shadow-card)] mb-4 flex items-center justify-between text-sm font-semibold"
+            >
+              <div>
+                <span className="font-bold">Error:</span> {errorMsg}
+              </div>
+              <button onClick={() => setErrorMsg('')} className="text-[var(--error-text)] hover:opacity-80 text-lg font-bold px-2 cursor-pointer">&times;</button>
+            </motion.div>
+          )}
+          {successMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="bg-[var(--success-bg)] border border-[var(--success-border)] text-[var(--success-text)] p-4 rounded-xl shadow-[var(--shadow-card)] mb-4 flex items-center justify-between text-sm font-semibold"
+            >
+              <div>
+                <span className="font-bold">Success:</span> {successMsg}
+              </div>
+              <button onClick={() => setSuccessMsg('')} className="text-[var(--success-text)] hover:opacity-80 text-lg font-bold px-2 cursor-pointer">&times;</button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Main Layout */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {/* Left Column: Forms and Dashboards */}
-        <div className="col-span-1 lg:col-span-2 space-y-6">
-          {!token || !user ? (
-            <Auth
-              loginForm={loginForm}
-              setLoginForm={setLoginForm}
-              regForm={regForm}
-              setRegForm={setRegForm}
-              currentScreen={currentScreen}
-              setCurrentScreen={setCurrentScreen}
-              handleLogin={handleLogin}
-              handleRegister={handleRegister}
-              handleQuickSeed={handleQuickSeed}
-              loading={loading}
-              isAdminPath={isAdminPath}
-            />
-          ) : (
-            (
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4">
+        {!token || !user ? (
+          <div className="flex items-center justify-center min-h-[70vh] w-full">
+            <div className="w-full max-w-md">
+              <Auth
+                loginForm={loginForm}
+                setLoginForm={setLoginForm}
+                regForm={regForm}
+                setRegForm={setRegForm}
+                currentScreen={currentScreen}
+                setCurrentScreen={setCurrentScreen}
+                handleLogin={handleLogin}
+                handleRegister={handleRegister}
+                handleQuickSeed={handleQuickSeed}
+                loading={loading}
+                isAdminPath={isAdminPath}
+              />
+            </div>
+          </div>
+        ) : (
+          <div className={`grid grid-cols-1 gap-6 ${
+            activeTab === 'mailbox' || activeTab === 'matches'
+              ? 'lg:grid-cols-1'
+              : 'lg:grid-cols-3'
+          }`}>
+            {/* Left Column: Forms and Dashboards */}
+            <div className={`space-y-6 ${
+              activeTab === 'mailbox' || activeTab === 'matches'
+                ? 'col-span-1'
+                : 'col-span-1 lg:col-span-2'
+            }`}>
               <div className="flex flex-col md:flex-row gap-6">
 
                 {/* Role Sidebar */}
-                <aside className="w-full md:w-56 shrink-0 flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none border-b md:border-b-0 md:border-r border-slate-800 pr-0 md:pr-4">
-                  {getSidebarLinks(user.role).map((link) => (
-                    <button
-                      key={link.id}
-                      onClick={() => setActiveTab(link.id)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition cursor-pointer shrink-0 ${activeTab === link.id
-                          ? 'bg-sports-cyan/15 text-sports-cyan border-l-2 border-sports-cyan'
-                          : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
-                        }`}
-                    >
-                      <span className="text-sm">{link.icon}</span>
-                      <span>{link.name}</span>
-                    </button>
-                  ))}
+                <aside className="w-full md:w-56 shrink-0 flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none border-b md:border-b-0 md:border-r border-[var(--border-default)] pr-0 md:pr-4">
+                  {getSidebarLinks(user.role).map((link) => {
+                    const isActive = activeTab === link.id;
+                    return (
+                      <button
+                        key={link.id}
+                        onClick={() => setActiveTab(link.id)}
+                        className={`relative flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all duration-200 cursor-pointer shrink-0 ${isActive
+                            ? 'text-[var(--accent)]'
+                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sidebar-hover)]'
+                          }`}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeSidebarIndicator"
+                            className="absolute inset-0 bg-[var(--bg-sidebar-active)] rounded-xl z-0"
+                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                          />
+                        )}
+                        <span className="text-sm relative z-10">{link.icon}</span>
+                        <span className="relative z-10">{link.name}</span>
+                      </button>
+                    );
+                  })}
                 </aside>
 
                 {/* Dashboard Views Content Panel */}
                 <div className="flex-1 min-w-0">
                   {/* Dashboard Header Banner */}
-                  <div className="bg-slate-950/70 border border-slate-800 p-6 rounded-xl flex items-center justify-between glass-panel mb-6">
+                  <div className="border-b-2 border-[var(--accent)] pb-3 mb-6 flex items-center justify-between">
                     <div>
-                      <div className="text-xs text-sports-cyan font-mono tracking-widest uppercase">Logged-in Portal</div>
-                      <h2 className="text-2xl font-bold text-slate-100 capitalize">
-                        {user.role.replace('_', ' ')} Dashboard
+                      <h2 className="text-2xl font-extrabold text-[var(--text-primary)] font-display tracking-tight uppercase">
+                        {user.role.replace(/_/g, ' ')} Dashboard
                       </h2>
+                      <p className="text-xs text-[var(--text-secondary)] font-semibold mt-0.5">
+                        National Sports Tournament Management System
+                      </p>
                     </div>
                     {!['super_admin', 'department_admin', 'federation_admin'].includes(user.role) && (
-                      <div className="bg-sports-cyan/5 text-sports-cyan border border-sports-cyan/20 px-4 py-2 rounded-lg font-mono text-xs text-center">
-                        Account Approved: <span className="font-bold text-emerald-400">TRUE</span>
-                      </div>
+                      <Badge variant="success" glow className="py-1 px-3">
+                        Account Approved
+                      </Badge>
                     )}
                   </div>
 
@@ -936,15 +961,17 @@ function App() {
                   )}
                 </div>
               </div>
-          )
-        )}
-        </div>
+            </div>
 
-        {/* Right Column: Live Feed & Mailbox */}
-        <div className="space-y-6 col-span-1">
-          <LiveMatches matches={matches} onSelectMatch={setSelectedMatchAnalysis} />
-          {token && <Mailbox notificationLogs={notificationLogs} />}
-        </div>
+            {/* Right Column: Live Feed & Mailbox — hidden when their tab is active */}
+            {activeTab !== 'mailbox' && activeTab !== 'matches' && (
+              <div className="space-y-6 col-span-1">
+                <LiveMatches matches={matches} onSelectMatch={setSelectedMatchAnalysis} />
+                <Mailbox notificationLogs={notificationLogs} />
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Declare Match Ended Modal */}
@@ -956,7 +983,7 @@ function App() {
               <p className="text-xs text-slate-400">Match: {completeMatchModal.team_a.name} vs {completeMatchModal.team_b.name}</p>
             </div>
 
-            <form onSubmit={handleCompleteMatchSubmit} className="space-y-6">
+            <form onSubmit={handleCompleteMatchSubmit} autoComplete="off" className="space-y-6">
 
               <div className="bg-slate-900/60 p-4 rounded border border-slate-800">
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Declare Winner</label>
@@ -989,6 +1016,7 @@ function App() {
                             <input
                               type="number"
                               required
+                              autoComplete="off"
                               min="0"
                               className="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-slate-100 font-mono text-center"
                               value={perf.runs_scored}
@@ -999,6 +1027,7 @@ function App() {
                             <input
                               type="number"
                               required
+                              autoComplete="off"
                               min="0"
                               className="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-slate-100 font-mono text-center"
                               value={perf.balls_faced}
@@ -1009,6 +1038,7 @@ function App() {
                             <input
                               type="number"
                               required
+                              autoComplete="off"
                               min="0"
                               max="10"
                               className="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-emerald-400 font-mono text-center"
@@ -1020,6 +1050,7 @@ function App() {
                             <input
                               type="number"
                               required
+                              autoComplete="off"
                               min="0"
                               className="w-16 bg-slate-900 border border-slate-700 rounded px-1.5 py-1 text-rose-400 font-mono text-center"
                               value={perf.runs_conceded}

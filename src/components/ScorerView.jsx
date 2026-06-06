@@ -110,7 +110,7 @@ export default function ScorerView({
           </div>
 
           {/* Adjust scoring Form */}
-          <form onSubmit={handleUpdateLiveScore} className="bg-slate-950 p-4 rounded border border-slate-800 space-y-4">
+          <form onSubmit={handleUpdateLiveScore} autoComplete="off" className="bg-slate-950 p-4 rounded border border-slate-800 space-y-4">
             <div className="grid grid-cols-4 gap-3 text-xs">
               <div>
                 <label className="block text-slate-500 font-bold mb-1">Batting Team</label>
@@ -127,6 +127,7 @@ export default function ScorerView({
                 <label className="block text-slate-500 font-bold mb-1">Runs</label>
                 <input
                   type="number"
+                  autoComplete="off"
                   className="w-full bg-slate-900 border border-slate-700 rounded p-1 text-slate-100 font-mono"
                   value={scoringForm.runs}
                   onChange={(e) => setScoringForm({ ...scoringForm, runs: e.target.value })}
@@ -137,6 +138,7 @@ export default function ScorerView({
                 <input
                   type="number"
                   max="10"
+                  autoComplete="off"
                   className="w-full bg-slate-900 border border-slate-700 rounded p-1 text-slate-100 font-mono"
                   value={scoringForm.wickets}
                   onChange={(e) => setScoringForm({ ...scoringForm, wickets: e.target.value })}
@@ -147,6 +149,7 @@ export default function ScorerView({
                 <input
                   type="number"
                   step="0.1"
+                  autoComplete="off"
                   className="w-full bg-slate-900 border border-slate-700 rounded p-1 text-slate-100 font-mono"
                   value={scoringForm.overs}
                   onChange={(e) => setScoringForm({ ...scoringForm, overs: e.target.value })}

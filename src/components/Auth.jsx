@@ -1,4 +1,8 @@
-import { useState } from 'react'
+import React from 'react';
+import { Shield, Sparkles, UserPlus, LogIn } from 'lucide-react';
+import { Card } from './ui/Card';
+import { Button } from './ui/Button';
+import { Badge } from './ui/Badge';
 
 export default function Auth({
   loginForm,
@@ -15,167 +19,121 @@ export default function Auth({
 }) {
   if (currentScreen === 'admin_login') {
     return (
-      <div className="glass-panel p-8 rounded-xl max-w-md mx-auto space-y-6 border border-slate-800 shadow-xl">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 bg-sky-500/10 text-sky-400 border border-sky-800 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider font-mono">
-            🛡️ Super Admin Control Portal
-          </div>
-          <h1 className="text-2xl font-black text-slate-100 tracking-tight">Super Admin Sign In</h1>
-          <p className="text-slate-500 text-xs">Access platform bootstrapping, departments creation, and central platform controls.</p>
+      <Card className="max-w-md mx-auto space-y-6">
+        <div className="text-center space-y-3">
+          <Badge variant="primary" glow className="py-1 px-3.5 uppercase tracking-wider font-mono">
+            🛡️ Super Admin Control
+          </Badge>
+          <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Super Admin Sign In</h1>
+          <p className="text-[var(--text-secondary)] text-xs">Access platform bootstrapping, departments creation, and central platform controls.</p>
         </div>
 
-        <form onSubmit={(e) => handleLogin(e, 'admin')} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Super Admin Email Address</label>
+        <form onSubmit={(e) => handleLogin(e, 'admin')} autoComplete="off" className="space-y-4 text-xs">
+          {/* Dummy inputs to prevent Chrome autofill */}
+          <input type="text" name="chrome-email-prevent" style={{ display: 'none' }} autoComplete="off" />
+          <input type="password" name="chrome-password-prevent" style={{ display: 'none' }} autoComplete="new-password" />
+
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase">Super Admin Email</label>
             <input
               type="email"
               required
-              autoComplete="off"
+              autoComplete="one-time-code"
               placeholder="e.g. superadmin@sports.com"
-              className="w-full bg-slate-900/60 border border-slate-700 rounded px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan font-mono"
+              className="w-full rounded-xl px-3 py-2 text-xs font-mono"
               value={loginForm.email}
               onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
             />
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
+          <div className="space-y-1">
+            <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase">Password</label>
             <input
               type="password"
               required
               autoComplete="new-password"
               placeholder="••••••••"
-              className="w-full bg-slate-900/60 border border-slate-700 rounded px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan"
+              className="w-full rounded-xl px-3 py-2 text-xs"
               value={loginForm.password}
               onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
             />
           </div>
-          <button type="submit" disabled={loading} className="w-full py-2.5 rounded btn-primary cursor-pointer text-slate-950 font-bold">
-            {loading ? 'Authenticating Super Admin...' : 'Enter Super Admin Panel'}
-          </button>
+          <Button type="submit" isLoading={loading} className="w-full py-2.5 font-bold">
+            {loading ? 'Authenticating...' : 'Enter Super Admin Panel'}
+          </Button>
         </form>
-
-
-      </div>
-    )
+      </Card>
+    );
   }
 
   if (currentScreen === 'register') {
     return (
-      <div className="glass-panel p-8 rounded-xl max-w-md mx-auto space-y-6 border border-slate-800 shadow-xl">
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-black text-slate-100 tracking-tight">Create Standard Account</h1>
-          <p className="text-slate-500 text-xs">Join active cricket tournaments as a player, coach, scorer, or sponsor.</p>
+      <Card className="max-w-md mx-auto space-y-6 text-center">
+        <div className="space-y-3">
+          <Badge variant="danger" glow className="py-1 px-3.5 uppercase tracking-wider font-mono">
+            🔒 Restricted Access
+          </Badge>
+          <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Registration Disabled</h1>
+          <p className="text-[var(--text-secondary)] text-xs leading-relaxed">
+            Self-registration on the web portal is disabled. Players, Coaches, Sponsors, and Scorers are restricted from accessing this platform. If you are an administrator, please contact the Super Admin to set up your account.
+          </p>
         </div>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Full Name</label>
-            <input
-              type="text"
-              required
-              autoComplete="off"
-              placeholder="Virat Kohli"
-              className="w-full bg-slate-900/60 border border-slate-700 rounded px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan"
-              value={regForm.full_name}
-              onChange={(e) => setRegForm({ ...regForm, full_name: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Email Address</label>
-            <input
-              type="email"
-              required
-              autoComplete="off"
-              placeholder="vkohli@sports.com"
-              className="w-full bg-slate-900/60 border border-slate-700 rounded px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan font-mono"
-              value={regForm.email}
-              onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
-            <input
-              type="password"
-              required
-              autoComplete="new-password"
-              placeholder="Minimum 6 characters"
-              className="w-full bg-slate-900/60 border border-slate-700 rounded px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan"
-              value={regForm.password}
-              onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Select System Role</label>
-            <select
-              className="w-full bg-slate-900 border border-slate-700 rounded px-3 py-2 text-slate-100 focus:outline-none focus:border-sports-cyan"
-              value={regForm.role}
-              onChange={(e) => setRegForm({ ...regForm, role: e.target.value })}
-            >
-              <option value="player">Player</option>
-              <option value="coach">Coach</option>
-              <option value="sponsor">Sponsor</option>
-              <option value="scorer">Scorer (Umpire)</option>
-            </select>
-          </div>
-
-          <button type="submit" disabled={loading} className="w-full py-2.5 rounded btn-primary cursor-pointer text-slate-950 font-bold">
-            {loading ? 'Registering...' : 'Register Profile'}
-          </button>
-        </form>
-
-        <div className="border-t border-slate-800 pt-4 text-center">
+        <div className="border-t border-[var(--border-default)] pt-4 text-center">
           <button
             onClick={() => setCurrentScreen('standard_login')}
-            className="text-sports-cyan hover:underline text-xs font-semibold cursor-pointer"
+            className="text-[var(--accent)] hover:underline text-xs font-semibold cursor-pointer"
           >
-            Already have an account? Sign In
+            Return to Sign In
           </button>
         </div>
-      </div>
-    )
+      </Card>
+    );
   }
 
   // Default: standard_login (Standard User Portal)
   return (
-    <div className="glass-panel p-8 rounded-xl max-w-md mx-auto space-y-6 border border-slate-800 shadow-xl">
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-black text-slate-100 tracking-tight">Cricket Portal Sign In</h1>
-        <p className="text-slate-500 text-xs">Sign in to manage team setups, schedule cricket matches, input scores, and review analytical rankings.</p>
+    <Card className="max-w-md mx-auto space-y-6">
+      <div className="text-center space-y-3">
+        <Badge variant="primary" glow className="py-1 px-3.5 uppercase tracking-wider font-mono">
+          ⚡ Sports Portal Login
+        </Badge>
+        <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Cricket Portal Sign In</h1>
+        <p className="text-[var(--text-secondary)] text-xs">Sign in to manage team setups, schedule cricket matches, input scores, and review analytical rankings.</p>
       </div>
 
-      <form onSubmit={(e) => handleLogin(e, 'standard')} className="space-y-4">
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Email address</label>
+      <form onSubmit={(e) => handleLogin(e, 'standard')} autoComplete="off" className="space-y-4 text-xs">
+        {/* Dummy inputs to prevent Chrome autofill */}
+        <input type="text" name="chrome-email-prevent-std" style={{ display: 'none' }} autoComplete="off" />
+        <input type="password" name="chrome-password-prevent-std" style={{ display: 'none' }} autoComplete="new-password" />
+
+        <div className="space-y-1">
+          <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase">Email address</label>
           <input
             type="email"
             required
-            autoComplete="off"
+            autoComplete="one-time-code"
             placeholder="e.g. player1@sports.com"
-            className="w-full bg-slate-900/60 border border-slate-700 rounded px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan font-mono"
+            className="w-full rounded-xl px-3 py-2 text-xs font-mono"
             value={loginForm.email}
             onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
           />
         </div>
-        <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Password</label>
+        <div className="space-y-1">
+          <label className="block text-[10px] font-bold text-[var(--text-secondary)] uppercase">Password</label>
           <input
             type="password"
             required
             autoComplete="new-password"
             placeholder="••••••••"
-            className="w-full bg-slate-900/60 border border-slate-700 rounded px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan"
+            className="w-full rounded-xl px-3 py-2 text-xs"
             value={loginForm.password}
             onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
           />
         </div>
-        <button type="submit" disabled={loading} className="w-full py-2.5 rounded btn-primary cursor-pointer text-slate-950 font-bold">
-          {loading ? 'Accessing Dashboard...' : 'Access Dashboard'}
-        </button>
+        <Button type="submit" isLoading={loading} className="w-full py-2.5 font-bold">
+          {loading ? 'Accessing...' : 'Access Dashboard'}
+        </Button>
       </form>
-
-
-
-
-    </div>
-  )
+    </Card>
+  );
 }
