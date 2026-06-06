@@ -434,35 +434,126 @@ export default function SuperAdminView({
   }
 
   if (activeTab === 'matches') {
+    const live = matches.filter(m => m.status === 'live');
+    const upcoming = matches.filter(m => m.status === 'scheduled');
+    const finished = matches.filter(m => m.status === 'completed');
+    const cancelled = matches.filter(m => m.status === 'cancelled');
+
     return (
-      <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-lg space-y-4">
-        <h3 className="font-bold text-lg text-slate-200">Scheduled Matches</h3>
-        <div className="space-y-3">
-          {matches.map(m => (
-            <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-slate-850 flex justify-between items-center text-xs">
-              <div>
-                <div className="font-semibold text-slate-100">{m.team_a.name} vs {m.team_b.name}</div>
-                <div className="text-slate-400 mt-1 font-mono">{m.tournament.name}</div>
-                <div className="text-slate-500 mt-0.5 capitalize">Status: {m.status}</div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onSelectMatch(m)}
-                  className="px-3 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-semibold cursor-pointer transition duration-150"
-                >
-                  View Stats
-                </button>
-                <button
-                  onClick={() => handleDeleteMatch(m.id)}
-                  className="px-3 py-1 bg-red-950 hover:bg-red-900 text-red-200 rounded border border-red-900/50 font-semibold cursor-pointer transition duration-150"
-                >
-                  Delete
-                </button>
-              </div>
+      <div className="space-y-6 text-xs">
+        {/* Live Matches */}
+        <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-lg space-y-3">
+          <h3 className="font-bold text-red-500 text-sm flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+            Live Matches ({live.length})
+          </h3>
+          {live.length === 0 ? (
+            <p className="text-slate-500 italic">No matches currently live.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {live.map(m => (
+                <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-red-950/40 space-y-2">
+                  <div className="font-bold text-slate-100 flex justify-between items-center">
+                    <span>{m.team_a.name} vs {m.team_b.name}</span>
+                    <button
+                      onClick={() => onSelectMatch(m)}
+                      className="px-3 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-bold text-[10px] cursor-pointer uppercase tracking-wider"
+                    >
+                      View
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-mono">
+                    <div className="flex justify-between">
+                      <span>{m.team_a.name}:</span>
+                      <span className="text-slate-200 font-bold">{m.team_a_runs}/{m.team_a_wickets} ({m.team_a_overs} ov)</span>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span>{m.team_b.name}:</span>
+                      <span className="text-slate-200 font-bold">{m.team_b_runs}/{m.team_b_wickets} ({m.team_b_overs} ov)</span>
+                    </div>
+                  </div>
+                  <div className="text-[10px] text-slate-500 border-t border-slate-900 pt-1.5 font-mono">
+                    League: {m.tournament.name}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-          {matches.length === 0 && (
-            <p className="text-slate-500 italic text-center py-4">No matches scheduled yet.</p>
+          )}
+        </div>
+
+        {/* Upcoming Matches */}
+        <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-lg space-y-3">
+          <h3 className="font-bold text-slate-200 text-sm">Upcoming Fixtures ({upcoming.length})</h3>
+          {upcoming.length === 0 ? (
+            <p className="text-slate-500 italic">No upcoming fixtures scheduled.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {upcoming.map(m => (
+                <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-slate-850 flex justify-between items-center text-xs">
+                  <div>
+                    <div className="font-semibold text-slate-100">{m.team_a.name} vs {m.team_b.name}</div>
+                    <div className="text-[10px] text-slate-400 font-mono">Tournament: {m.tournament.name}</div>
+                    <div className="text-[10px] text-sports-cyan font-bold uppercase tracking-wider font-mono mt-0.5">Status: Scheduled</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => onSelectMatch(m)}
+                      className="px-3 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-bold text-[10px] cursor-pointer uppercase tracking-wider"
+                    >
+                      View
+                    </button>
+                    <button
+                      onClick={() => handleDeleteMatch(m.id)}
+                      className="px-2 py-1 bg-red-950 hover:bg-red-900 text-red-200 rounded border border-red-900/50 font-semibold text-[10px] cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Finished Matches */}
+        <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-lg space-y-3">
+          <h3 className="font-bold text-slate-200 text-sm">Finished Matches ({finished.length})</h3>
+          {finished.length === 0 ? (
+            <p className="text-slate-500 italic">No finished matches.</p>
+          ) : (
+            <div className="space-y-2.5">
+              {finished.map(m => {
+                const winnerName = m.winner_id === m.team_a_id ? m.team_a.name : (m.winner_id === m.team_b_id ? m.team_b.name : 'Draw / No Result');
+                return (
+                  <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-slate-850 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 text-xs">
+                    <div>
+                      <div className="font-semibold text-slate-100">{m.team_a.name} vs {m.team_b.name}</div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">Tournament: {m.tournament.name}</div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        Scores: {m.team_a.name} ({m.team_a_runs}/{m.team_a_wickets}) | {m.team_b.name} ({m.team_b_runs}/{m.team_b_wickets})
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => onSelectMatch(m)}
+                        className="px-3 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-bold text-[10px] cursor-pointer uppercase tracking-wider"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMatch(m.id)}
+                        className="px-2.5 py-1 bg-red-950 hover:bg-red-900 text-red-200 rounded border border-red-900/50 font-semibold text-[10px] cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                      <div className="bg-emerald-950/40 text-emerald-400 border border-emerald-900/40 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-wider">
+                        🏆 Winner: {winnerName}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

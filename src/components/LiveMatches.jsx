@@ -1,4 +1,4 @@
-export default function LiveMatches({ matches }) {
+export default function LiveMatches({ matches, onSelectMatch }) {
   return (
     <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-5 glass-panel space-y-4">
       <h3 className="font-bold text-slate-200 flex items-center gap-2">
@@ -32,6 +32,17 @@ export default function LiveMatches({ matches }) {
               {m.status === 'completed' && m.winner && (
                 <div className="text-[10px] text-emerald-400 font-bold border-t border-slate-800 pt-1">
                   🏆 Winner: {m.winner.name}
+                </div>
+              )}
+
+              {onSelectMatch && (
+                <div className="border-t border-slate-850 pt-2 flex justify-end">
+                  <button
+                    onClick={() => onSelectMatch(m)}
+                    className="px-2.5 py-0.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 text-sports-cyan text-[10px] font-bold rounded cursor-pointer transition"
+                  >
+                    View Stats
+                  </button>
                 </div>
               )}
             </div>

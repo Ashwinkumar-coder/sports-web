@@ -480,9 +480,9 @@ export default function FederationAdminView({
                     <span>{m.team_a.name} vs {m.team_b.name}</span>
                     <button
                       onClick={() => onSelectMatch(m)}
-                      className="px-2 py-0.5 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-semibold text-[9px] cursor-pointer"
+                      className="px-3 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-bold text-[10px] cursor-pointer uppercase tracking-wider"
                     >
-                      View Live Stats
+                      View
                     </button>
                   </div>
                   <div className="text-[10px] text-slate-400 font-mono">
@@ -520,9 +520,9 @@ export default function FederationAdminView({
                   </div>
                   <button
                     onClick={() => onSelectMatch(m)}
-                    className="px-2 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-semibold text-[10px] cursor-pointer"
+                    className="px-3 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-bold text-[10px] cursor-pointer uppercase tracking-wider"
                   >
-                    View Stats
+                    View
                   </button>
                 </div>
               ))}
@@ -551,9 +551,9 @@ export default function FederationAdminView({
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => onSelectMatch(m)}
-                        className="px-2.5 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-semibold text-[10px] cursor-pointer"
+                        className="px-3 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-bold text-[10px] cursor-pointer uppercase tracking-wider"
                       >
-                        View Stats
+                        View
                       </button>
                       <div className="bg-emerald-950/40 text-emerald-400 border border-emerald-900/40 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-wider">
                         🏆 Winner: {winnerName}

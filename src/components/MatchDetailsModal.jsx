@@ -8,6 +8,8 @@ function seededRandom(seed) {
 
 export default function MatchDetailsModal({ match, onClose }) {
   const [activeSubTab, setActiveSubTab] = useState('summary');
+  const [activeInningsTab, setActiveInningsTab] = useState(0); // 0: Innings 1 (Team A), 1: Innings 2 (Team B)
+  const [statsTab, setStatsTab] = useState('wagon_wheel'); // wagon_wheel, over_comparison, run_comparison
   const [wagonFilter, setWagonFilter] = useState('all'); // all, boundaries, wickets, singles
 
   if (!match) return null;
@@ -117,62 +119,137 @@ export default function MatchDetailsModal({ match, onClose }) {
   });
 
   // Generate Scorecards deterministically
-  const generateScorecard = (seedOffset, teamName, teamPlayers, runs, wickets, opponentOvers) => {
-    const list = [];
-    const playersCount = teamPlayers?.length || 0;
-    let remainingRuns = runs;
-    let wicketsFallen = wickets;
+  const generateScorecard = (seedOffset, teamName, teamPlayers, runs, wickets, totalOvers, opponentPlayers) => {
+    const batting = [];
+    const bowling = [];
 
     // Default player templates if squad is empty
     const defaultNames = ["Rohit Sharma", "Shubman Gill", "Virat Kohli", "Shreyas Iyer", "KL Rahul", "Hardik Pandya", "Ravindra Jadeja", "Jasprit Bumrah", "Kuldeep Yadav", "Mohammed Siraj", "Mohammed Shami"];
+    const opponentDefaultNames = ["MS Dhoni", "Ruturaj Gaikwad", "Shivam Dube", "Ravindra Jadeja", "Matheesha Pathirana", "Ajinkya Rahane", "Deepak Chahar", "Shardul Thakur", "Tushar Deshpande", "Mitchell Santner", "Sameer Rizvi"];
 
-    for (let i = 0; i < 11; i++) {
-      const pName = teamPlayers?.[i]?.player?.full_name || defaultNames[i];
+    // Dynamically build squad names from registered players or defaults
+    const squad = (teamPlayers && teamPlayers.length > 0)
+      ? teamPlayers.map(tp => tp.player?.full_name).filter(Boolean)
+      : defaultNames;
+
+    const squadLength = squad.length;
+    let wicketsFallen = Math.min(wickets, squadLength - 1);
+
+    // Opponent squad details for bowling attribution
+    const opponentSquad = (opponentPlayers && opponentPlayers.length > 0)
+      ? opponentPlayers.map(tp => tp.player?.full_name).filter(Boolean)
+      : opponentDefaultNames;
+
+    const opponentLength = opponentSquad.length;
+    const bowlersCount = Math.min(5, opponentLength);
+
+    // Calculate Extras first so batting runs + extras equals exactly total runs
+    const extrasSeed = matchId * 250 + seedOffset;
+    const extrasR = seededRandom(extrasSeed);
+    const totalExtras = Math.max(1, Math.min(runs, Math.round(extrasR * 12)));
+    const wd = Math.round(totalExtras * 0.5);
+    const nb = Math.round(totalExtras * 0.1);
+    const lb = Math.round(totalExtras * 0.2);
+    const bExtra = totalExtras - wd - nb - lb;
+
+    let remainingRuns = Math.max(0, runs - totalExtras);
+
+    // Batting
+    for (let i = 0; i < squadLength; i++) {
+      const pName = squad[i];
       let pRuns = 0;
       let pBalls = 0;
-      let pWickets = 0;
-      let pConceded = 0;
-      let statusText = 'Did not bat';
+      let fours = 0;
+      let sixes = 0;
+      let statusText = 'Yet to bat';
 
       const seed = matchId * 150 + seedOffset + i;
       const r = seededRandom(seed);
 
-      // Batting
-      if (i < wicketsFallen + 2 && i < 11) {
+      if (i < wicketsFallen + 2) {
         if (i < wicketsFallen) {
-          statusText = `c & b Bowler ${i + 1}`;
+          const bowlerIndex = i % bowlersCount;
+          const bowlerName = opponentSquad[opponentLength - 1 - bowlerIndex];
+          statusText = `c & b ${bowlerName}`;
           pRuns = Math.round(r * (remainingRuns / (wicketsFallen - i + 1)));
           remainingRuns -= pRuns;
         } else {
           statusText = 'Not Out';
-          pRuns = remainingRuns;
-          remainingRuns = 0;
+          if (i === wicketsFallen && wicketsFallen + 1 < squadLength) {
+            pRuns = Math.round(r * remainingRuns);
+            remainingRuns -= pRuns;
+          } else {
+            pRuns = remainingRuns;
+            remainingRuns = 0;
+          }
         }
         pBalls = Math.max(pRuns + 2, Math.round(r * 30) + 5);
+        fours = Math.max(0, Math.floor(r * (pRuns / 4)));
+        sixes = Math.max(0, Math.floor((r * (pRuns - fours * 4)) / 6));
       }
 
-      // Bowling (mainly bottom 5 players)
-      if (i >= 5) {
-        const bowr = seededRandom(seed + 80);
-        pWickets = bowr < 0.2 ? 2 : (bowr < 0.5 ? 1 : 0);
-        pConceded = Math.round(bowr * 35) + 10;
+      if (statusText !== 'Yet to bat') {
+        batting.push({
+          name: pName,
+          runs: pRuns,
+          balls: pBalls,
+          fours,
+          sixes,
+          status: statusText
+        });
+      }
+    }
+
+    // Bowling (the opponent team's players bowl)
+    const overShare = totalOvers / Math.max(1, bowlersCount);
+    let remainingWickets = wicketsFallen;
+    let remainingConceded = runs - lb - bExtra; // Conceded runs excludes legbyes and byes
+    if (remainingConceded < 0) remainingConceded = 0;
+
+    for (let i = 0; i < bowlersCount; i++) {
+      const bowName = opponentSquad[opponentLength - 1 - i];
+      const seed = matchId * 200 + seedOffset + i;
+      const r = seededRandom(seed);
+
+      const bOvers = parseFloat(overShare.toFixed(1));
+      
+      let bWickets = 0;
+      if (i === bowlersCount - 1) {
+        bWickets = remainingWickets;
+      } else {
+        bWickets = Math.min(remainingWickets, Math.round(r * (remainingWickets / (bowlersCount - i))));
+        remainingWickets -= bWickets;
       }
 
-      list.push({
-        name: pName,
-        runs: pRuns,
-        balls: pBalls,
-        status: statusText,
-        wickets: pWickets,
-        conceded: pConceded
+      let bConceded = 0;
+      if (i === bowlersCount - 1) {
+        bConceded = remainingConceded;
+      } else {
+        bConceded = Math.min(remainingConceded, Math.round(r * (remainingConceded / (bowlersCount - i) * 1.3)));
+        remainingConceded -= bConceded;
+      }
+
+      const bMaidens = r > 0.85 && bConceded < bOvers * 4 ? 1 : 0;
+
+      bowling.push({
+        name: bowName,
+        overs: bOvers,
+        maidens: bMaidens,
+        runs: bConceded,
+        wickets: bWickets
       });
     }
 
-    return list;
+    return {
+      batting,
+      bowling,
+      extras: totalExtras,
+      extrasDetail: `(wd ${wd}, nb ${nb}, lb ${lb}, b ${bExtra})`
+    };
   };
 
-  const teamAScorecard = generateScorecard(70, teamA.name, teamA.players, match.team_a_runs, match.team_a_wickets, match.team_b_overs);
-  const teamBScorecard = generateScorecard(80, teamB.name, teamB.players, match.team_b_runs, match.team_b_wickets, match.team_a_overs);
+  const teamAScorecard = generateScorecard(70, teamA.name, teamA.players, match.team_a_runs, match.team_a_wickets, match.team_a_overs, teamB.players);
+  const teamBScorecard = generateScorecard(80, teamB.name, teamB.players, match.team_b_runs, match.team_b_wickets, match.team_b_overs, teamA.players);
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 overflow-y-auto">
@@ -227,7 +304,7 @@ export default function MatchDetailsModal({ match, onClose }) {
 
         {/* Tab Selection */}
         <div className="flex bg-slate-950/80 border-b border-slate-800 p-1.5 gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
-          {['summary', 'scorecard', 'wagon_wheel', 'charts'].map(t => (
+          {['summary', 'scorecard', 'stats'].map(t => (
             <button
               key={t}
               onClick={() => setActiveSubTab(t)}
@@ -241,6 +318,29 @@ export default function MatchDetailsModal({ match, onClose }) {
             </button>
           ))}
         </div>
+
+        {/* Nested Stats Tab Selection */}
+        {activeSubTab === 'stats' && (
+          <div className="flex bg-slate-900 border-b border-slate-800 p-1.5 gap-1.5 overflow-x-auto shrink-0 scrollbar-none justify-center">
+            {[
+              { id: 'wagon_wheel', label: 'Wagon Wheel' },
+              { id: 'over_comparison', label: 'Over Comparison' },
+              { id: 'run_comparison', label: 'Run Comparison' }
+            ].map(sub => (
+              <button
+                key={sub.id}
+                onClick={() => setStatsTab(sub.id)}
+                className={`px-3 py-1.5 rounded-md text-[9px] font-extrabold uppercase tracking-widest transition cursor-pointer ${
+                  statsTab === sub.id 
+                    ? 'bg-sports-cyan text-slate-100 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-200 hover:bg-slate-950/45'
+                }`}
+              >
+                {sub.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Content Container */}
         <div className="flex-1 overflow-y-auto p-6 bg-slate-950/20">
@@ -308,76 +408,160 @@ export default function MatchDetailsModal({ match, onClose }) {
           )}
 
           {/* Subtab: SCORECARD */}
-          {activeSubTab === 'scorecard' && (
-            <div className="space-y-6">
-              {/* Team A Batting Scorecard */}
-              <div className="bg-slate-900/40 border border-slate-850 rounded-xl overflow-hidden">
-                <div className="bg-slate-950 p-3.5 border-b border-slate-850 flex justify-between items-center">
-                  <h4 className="font-bold text-slate-200">{teamA.name} Innings</h4>
-                  <span className="font-mono text-slate-300 font-bold">{match.team_a_runs}/{match.team_a_wickets} ({match.team_a_overs} Ov)</span>
-                </div>
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-850 text-slate-500 font-bold uppercase tracking-wider text-[9px] bg-slate-950/40">
-                      <th className="py-2.5 px-3.5">Batter</th>
-                      <th className="py-2.5 px-3.5">Status</th>
-                      <th className="py-2.5 px-3.5 text-right">Runs</th>
-                      <th className="py-2.5 px-3.5 text-right">Balls</th>
-                      <th className="py-2.5 px-3.5 text-right">SR</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-900/60">
-                    {teamAScorecard.map((p, i) => (
-                      <tr key={i} className="hover:bg-slate-900/10">
-                        <td className="py-2 px-3.5 font-semibold text-slate-300">{p.name}</td>
-                        <td className="py-2 px-3.5 text-slate-500 italic text-[10px]">{p.status}</td>
-                        <td className="py-2 px-3.5 text-right font-mono font-bold text-slate-200">{p.runs}</td>
-                        <td className="py-2 px-3.5 text-right font-mono text-slate-400">{p.balls}</td>
-                        <td className="py-2 px-3.5 text-right font-mono text-slate-400">
-                          {p.balls > 0 ? ((p.runs / p.balls) * 100).toFixed(1) : '0.0'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+          {activeSubTab === 'scorecard' && (() => {
+            const currentInningsData = activeInningsTab === 0 ? teamAScorecard : teamBScorecard;
+            const currentInningsTeam = activeInningsTab === 0 ? teamA : teamB;
+            const currentInningsRuns = activeInningsTab === 0 ? match.team_a_runs : match.team_b_runs;
+            const currentInningsWickets = activeInningsTab === 0 ? match.team_a_wickets : match.team_b_wickets;
+            const currentInningsOvers = activeInningsTab === 0 ? match.team_a_overs : match.team_b_overs;
+            const displayCRR = currentInningsOvers > 0 ? (currentInningsRuns / currentInningsOvers).toFixed(2) : '0.00';
 
-              {/* Team B Batting Scorecard */}
-              <div className="bg-slate-900/40 border border-slate-850 rounded-xl overflow-hidden">
-                <div className="bg-slate-950 p-3.5 border-b border-slate-850 flex justify-between items-center">
-                  <h4 className="font-bold text-slate-200">{teamB.name} Innings</h4>
-                  <span className="font-mono text-slate-300 font-bold">{match.team_b_runs}/{match.team_b_wickets} ({match.team_b_overs} Ov)</span>
+            return (
+              <div className="space-y-6">
+                {/* Premium Innings Selector Tabs */}
+                <div className="flex gap-2 w-full">
+                  <button
+                    onClick={() => setActiveInningsTab(0)}
+                    className={`flex-1 py-3 rounded-xl border text-center transition cursor-pointer ${
+                      activeInningsTab === 0 
+                        ? 'bg-sports-cyan/10 border-sports-cyan/35 text-sports-cyan font-bold shadow-sm' 
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-950/45'
+                    }`}
+                  >
+                    <div className="text-xs uppercase tracking-wider font-extrabold">{teamA.name}</div>
+                    <div className="text-[8px] opacity-60 uppercase font-mono tracking-widest mt-0.5">1st Innings</div>
+                  </button>
+                  <button
+                    onClick={() => setActiveInningsTab(1)}
+                    className={`flex-1 py-3 rounded-xl border text-center transition cursor-pointer ${
+                      activeInningsTab === 1 
+                        ? 'bg-sports-cyan/10 border-sports-cyan/35 text-sports-cyan font-bold shadow-sm' 
+                        : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-950/45'
+                    }`}
+                  >
+                    <div className="text-xs uppercase tracking-wider font-extrabold">{teamB.name}</div>
+                    <div className="text-[8px] opacity-60 uppercase font-mono tracking-widest mt-0.5">2nd Innings</div>
+                  </button>
                 </div>
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-850 text-slate-500 font-bold uppercase tracking-wider text-[9px] bg-slate-950/40">
-                      <th className="py-2.5 px-3.5">Batter</th>
-                      <th className="py-2.5 px-3.5">Status</th>
-                      <th className="py-2.5 px-3.5 text-right">Runs</th>
-                      <th className="py-2.5 px-3.5 text-right">Balls</th>
-                      <th className="py-2.5 px-3.5 text-right">SR</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-900/60">
-                    {teamBScorecard.map((p, i) => (
-                      <tr key={i} className="hover:bg-slate-900/10">
-                        <td className="py-2 px-3.5 font-semibold text-slate-300">{p.name}</td>
-                        <td className="py-2 px-3.5 text-slate-500 italic text-[10px]">{p.status}</td>
-                        <td className="py-2 px-3.5 text-right font-mono font-bold text-slate-200">{p.runs}</td>
-                        <td className="py-2 px-3.5 text-right font-mono text-slate-400">{p.balls}</td>
-                        <td className="py-2 px-3.5 text-right font-mono text-slate-400">
-                          {p.balls > 0 ? ((p.runs / p.balls) * 100).toFixed(1) : '0.0'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+
+                {/* Glassmorphic Total Score HUD */}
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-850 flex flex-col justify-between sm:flex-row sm:items-center gap-3">
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-slate-100 font-mono tracking-tighter">
+                      {currentInningsRuns}
+                      <span className="text-slate-400 text-base font-normal">/{currentInningsWickets}</span>
+                    </span>
+                    <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] font-mono">
+                      {currentInningsOvers} OVERS
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-[10px] font-bold font-mono">
+                    <span className="text-sports-cyan uppercase tracking-wider">CRR: {displayCRR}</span>
+                    <span className="text-slate-500 uppercase tracking-wider border-l border-slate-800 pl-4">
+                      {activeInningsTab === 0 ? 'First Innings Scorecard' : 'Second Innings Scorecard'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Batting Stats Section */}
+                <div className="bg-slate-900/40 border border-slate-850 p-4 rounded-xl space-y-3">
+                  <h4 className="text-sports-cyan font-black text-[10px] uppercase tracking-widest italic flex items-center gap-1.5">
+                    🏏 BATTING STATS
+                  </h4>
+                  <div className="overflow-hidden border border-slate-850/60 rounded-lg">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-855 text-slate-500 font-bold uppercase tracking-wider text-[9px] bg-slate-950/40 font-mono">
+                          <th className="py-2.5 px-3.5">Batter</th>
+                          <th className="py-2.5 px-3.5 text-right">R</th>
+                          <th className="py-2.5 px-3.5 text-right">B</th>
+                          <th className="py-2.5 px-3.5 text-right">4s</th>
+                          <th className="py-2.5 px-3.5 text-right">6s</th>
+                          <th className="py-2.5 px-3.5 text-right">SR</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-900/60">
+                        {currentInningsData.batting.map((p, i) => {
+                          const sr = p.balls > 0 ? ((p.runs / p.balls) * 100).toFixed(1) : '0.0';
+                          return (
+                            <tr key={i} className="hover:bg-slate-900/10">
+                              <td className="py-2.5 px-3.5">
+                                <div className="font-bold text-slate-200">{p.name}</div>
+                                <div className="text-[9px] text-slate-500 italic mt-0.5">{p.status}</div>
+                              </td>
+                              <td className="py-2.5 px-3.5 text-right font-mono font-extrabold text-slate-100">{p.runs}</td>
+                              <td className="py-2.5 px-3.5 text-right font-mono text-slate-400">{p.balls}</td>
+                              <td className="py-2.5 px-3.5 text-right font-mono text-slate-400">{p.fours}</td>
+                              <td className="py-2.5 px-3.5 text-right font-mono text-slate-400">{p.sixes}</td>
+                              <td className="py-2.5 px-3.5 text-right font-mono text-emerald-400 font-bold">{sr}</td>
+                            </tr>
+                          );
+                        })}
+                        {/* Extras Row */}
+                        <tr className="bg-slate-950/20 font-mono">
+                          <td className="py-3 px-3.5 font-bold text-slate-400 uppercase text-[10px]">Extras</td>
+                          <td colSpan="5" className="py-3 px-3.5 text-right text-slate-200 text-[10px]">
+                            <span className="font-bold">{currentInningsData.extras}</span>
+                            <span className="text-slate-500 font-normal ml-1.5">{currentInningsData.extrasDetail}</span>
+                          </td>
+                        </tr>
+                        {/* Total Score Row */}
+                        <tr className="bg-slate-950/40 font-mono border-t border-slate-800">
+                          <td className="py-3.5 px-3.5 font-black text-slate-100 uppercase text-[10px]">Total Score</td>
+                          <td colSpan="5" className="py-3.5 px-3.5 text-right text-emerald-400 font-black text-sm italic">
+                            {currentInningsRuns}/{currentInningsWickets}
+                            <span className="text-slate-500 text-[10px] font-bold uppercase not-italic ml-1">
+                              ({currentInningsOvers} ov)
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Bowling Stats Section */}
+                <div className="bg-slate-900/40 border border-slate-855 p-4 rounded-xl space-y-3">
+                  <h4 className="text-indigo-400 font-black text-[10px] uppercase tracking-widest italic flex items-center gap-1.5">
+                    🎯 BOWLING STATS
+                  </h4>
+                  <div className="overflow-hidden border border-slate-850/60 rounded-lg">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-855 text-slate-500 font-bold uppercase tracking-wider text-[9px] bg-slate-950/40 font-mono">
+                          <th className="py-2.5 px-3.5">Bowler</th>
+                          <th className="py-2.5 px-3.5 text-right">O</th>
+                          <th className="py-2.5 px-3.5 text-right">M</th>
+                          <th className="py-2.5 px-3.5 text-right">R</th>
+                          <th className="py-2.5 px-3.5 text-right">W</th>
+                          <th className="py-2.5 px-3.5 text-right">ECO</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-900/60 font-mono">
+                        {currentInningsData.bowling.map((bowl, i) => {
+                          const eco = bowl.overs > 0 ? (bowl.runs / bowl.overs).toFixed(2) : '0.00';
+                          return (
+                            <tr key={i} className="hover:bg-slate-900/10">
+                              <td className="py-2.5 px-3.5 font-bold text-slate-200 font-sans">{bowl.name}</td>
+                              <td className="py-2.5 px-3.5 text-right text-slate-100">{bowl.overs.toFixed(1)}</td>
+                              <td className="py-2.5 px-3.5 text-right text-slate-400">{bowl.maidens}</td>
+                              <td className="py-2.5 px-3.5 text-right text-slate-400">{bowl.runs}</td>
+                              <td className="py-2.5 px-3.5 text-right font-extrabold text-slate-100">{bowl.wickets}</td>
+                              <td className="py-2.5 px-3.5 text-right text-indigo-400 font-bold">{eco}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Subtab: WAGON WHEEL */}
-          {activeSubTab === 'wagon_wheel' && (
+          {activeSubTab === 'stats' && statsTab === 'wagon_wheel' && (
             <div className="space-y-6">
               <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl flex flex-col md:flex-row gap-6 items-center justify-center">
                 {/* Visual Field SVG representation */}
@@ -457,8 +641,8 @@ export default function MatchDetailsModal({ match, onClose }) {
             </div>
           )}
 
-          {/* Subtab: CHARTS (COMPARISONS) */}
-          {activeSubTab === 'charts' && (
+          {/* Subtab: OVER COMPARISON */}
+          {activeSubTab === 'stats' && statsTab === 'over_comparison' && (
             <div className="space-y-6">
               {/* Over comparison charts (side-by-side RPO representation) */}
               <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl space-y-4">
@@ -501,7 +685,12 @@ export default function MatchDetailsModal({ match, onClose }) {
                   })}
                 </div>
               </div>
+            </div>
+          )}
 
+          {/* Subtab: RUN COMPARISON */}
+          {activeSubTab === 'stats' && statsTab === 'run_comparison' && (
+            <div className="space-y-6">
               {/* Cumulative Run Comparison progression */}
               <div className="bg-slate-900/40 border border-slate-850 p-5 rounded-xl space-y-4">
                 <h4 className="font-bold text-slate-200">Cumulative Innings Progression</h4>

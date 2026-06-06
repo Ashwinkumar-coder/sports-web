@@ -942,7 +942,7 @@ function App() {
 
         {/* Right Column: Live Feed & Mailbox */}
         <div className="space-y-6 col-span-1">
-          <LiveMatches matches={matches} />
+          <LiveMatches matches={matches} onSelectMatch={setSelectedMatchAnalysis} />
           {token && <Mailbox notificationLogs={notificationLogs} />}
         </div>
       </main>
