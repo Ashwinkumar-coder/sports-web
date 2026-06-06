@@ -15,7 +15,8 @@ export default function FederationAdminView({
   handleApproveTeam,
   handleApproveSponsorship,
   handleApproveScorer,
-  matches = []
+  matches = [],
+  onSelectMatch
 }) {
   if (activeTab === 'overview') {
     return (
@@ -73,62 +74,216 @@ export default function FederationAdminView({
         <div className="bg-slate-900/60 border border-slate-800 p-6 rounded-lg space-y-4">
           <h3 className="font-bold text-lg text-slate-200">Create a Cricket Tournament</h3>
           <p className="text-slate-400 text-sm mb-4">Request approval from the Department Admin for a new cricket league tournament.</p>
-          <form onSubmit={handleCreateTournament} className="space-y-4 text-xs max-w-2xl">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Tournament Title</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Summer Cricket Cup"
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan"
-                  value={newTourney.name}
-                  onChange={(e) => setNewTourney({ ...newTourney, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Entry Fee ($)</label>
-                <input
-                  type="number"
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
-                  value={newTourney.fee}
-                  onChange={(e) => setNewTourney({ ...newTourney, fee: parseFloat(e.target.value) || 0 })}
-                />
+          <form onSubmit={handleCreateTournament} className="space-y-6 text-xs max-w-3xl">
+            {/* Group 1: Basics */}
+            <div className="bg-slate-950/40 p-4 rounded border border-slate-800 space-y-3">
+              <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">1. Tournament Basics & Venue</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Tournament Title</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Summer Premier League"
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.name}
+                    onChange={(e) => setNewTourney({ ...newTourney, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">City</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Chennai"
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.city}
+                    onChange={(e) => setNewTourney({ ...newTourney, city: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Ground Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. M. A. Chidambaram Stadium"
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.ground_name}
+                    onChange={(e) => setNewTourney({ ...newTourney, ground_name: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Team Entries Limit</label>
-                <input
-                  type="number"
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
-                  value={newTourney.number_of_entry}
-                  onChange={(e) => setNewTourney({ ...newTourney, number_of_entry: parseInt(e.target.value) || 4 })}
-                />
+            {/* Group 2: Match Rules & Capacity */}
+            <div className="bg-slate-950/40 p-4 rounded border border-slate-800 space-y-3">
+              <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">2. Match Specifications & Capacity</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Ball Type</label>
+                  <select
+                    required
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.ball_type}
+                    onChange={(e) => setNewTourney({ ...newTourney, ball_type: e.target.value })}
+                  >
+                    <option value="leather">Leather Ball</option>
+                    <option value="tennis">Tennis Ball</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Overs per Match</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.overs}
+                    onChange={(e) => setNewTourney({ ...newTourney, overs: parseInt(e.target.value) || 20 })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Team Capacity (Max Teams)</label>
+                  <input
+                    type="number"
+                    required
+                    min="2"
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.number_of_entry}
+                    onChange={(e) => setNewTourney({ ...newTourney, number_of_entry: parseInt(e.target.value) || 2 })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Player Limit / Team</label>
+                  <input
+                    type="number"
+                    required
+                    min="5"
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.maximum_player_count}
+                    onChange={(e) => setNewTourney({ ...newTourney, maximum_player_count: parseInt(e.target.value) || 5 })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Max Squad Size</label>
+                  <input
+                    type="number"
+                    required
+                    min="5"
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.team_limits}
+                    onChange={(e) => setNewTourney({ ...newTourney, team_limits: parseInt(e.target.value) || 5 })}
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Players/Team (POC Default 5)</label>
-                <input
-                  type="number"
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
-                  value={newTourney.maximum_player_count}
-                  onChange={(e) => setNewTourney({ ...newTourney, maximum_player_count: parseInt(e.target.value) || 5 })}
-                />
+            </div>
+
+            {/* Group 3: Schedule Dates & Slots */}
+            <div className="bg-slate-950/40 p-4 rounded border border-slate-800 space-y-3">
+              <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">3. Dates, Schedule & Timing Slots</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Tournament Dates (Start - End)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      required
+                      className="w-1/2 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                      value={newTourney.start_date}
+                      onChange={(e) => setNewTourney({ ...newTourney, start_date: e.target.value })}
+                    />
+                    <input
+                      type="date"
+                      required
+                      className="w-1/2 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                      value={newTourney.end_date}
+                      onChange={(e) => setNewTourney({ ...newTourney, end_date: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Timing Slots</label>
+                  <select
+                    required
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.timing_slots}
+                    onChange={(e) => setNewTourney({ ...newTourney, timing_slots: e.target.value })}
+                  >
+                    <option value="Morning">Morning (7 AM - 11 AM)</option>
+                    <option value="Afternoon">Afternoon (12 PM - 4 PM)</option>
+                    <option value="Evening">Evening (5 PM - 9 PM)</option>
+                    <option value="Full Day">Full Day Slots</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Registration Window (Start - End)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      required
+                      className="w-1/2 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                      value={newTourney.registration_start_date}
+                      onChange={(e) => setNewTourney({ ...newTourney, registration_start_date: e.target.value })}
+                    />
+                    <input
+                      type="date"
+                      required
+                      className="w-1/2 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                      value={newTourney.registration_end_date}
+                      onChange={(e) => setNewTourney({ ...newTourney, registration_end_date: e.target.value })}
+                    />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Squad Size Max</label>
-                <input
-                  type="number"
-                  className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
-                  value={newTourney.team_limits}
-                  onChange={(e) => setNewTourney({ ...newTourney, team_limits: parseInt(e.target.value) || 5 })}
-                />
+            </div>
+
+            {/* Group 4: Financials & Pools */}
+            <div className="bg-slate-950/40 p-4 rounded border border-slate-800 space-y-3">
+              <h4 className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">4. Financials & Prizes</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Registration Status</label>
+                  <select
+                    required
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.free_or_paid}
+                    onChange={(e) => {
+                      const mode = e.target.value;
+                      setNewTourney({ ...newTourney, free_or_paid: mode, fee: mode === 'free' ? 0 : newTourney.fee });
+                    }}
+                  >
+                    <option value="free">Free Entry</option>
+                    <option value="paid">Paid Entry</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Entry Fee ($)</label>
+                  <input
+                    type="number"
+                    required
+                    disabled={newTourney.free_or_paid === 'free'}
+                    placeholder={newTourney.free_or_paid === 'free' ? '0 (Free)' : 'e.g. 100'}
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-sports-cyan disabled:opacity-50"
+                    value={newTourney.fee}
+                    onChange={(e) => setNewTourney({ ...newTourney, fee: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-400 uppercase mb-1">Prize Pool Value ($)</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 5000 Cash Prize"
+                    className="w-full bg-slate-950 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sports-cyan"
+                    value={newTourney.prize_pools}
+                    onChange={(e) => setNewTourney({ ...newTourney, prize_pools: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
 
             <div className="flex justify-end pt-2">
-              <button type="submit" className="px-6 py-2 rounded bg-sports-cyan text-slate-950 font-bold uppercase cursor-pointer hover:bg-cyan-400 transition">
+              <button type="submit" className="px-6 py-2.5 rounded bg-sports-cyan text-slate-950 font-bold uppercase cursor-pointer hover:bg-cyan-400 transition">
                 Create Tournament
               </button>
             </div>
@@ -321,8 +476,14 @@ export default function FederationAdminView({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {live.map(m => (
                 <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-red-950/40 space-y-2">
-                  <div className="font-bold text-slate-100 flex justify-between">
+                  <div className="font-bold text-slate-100 flex justify-between items-center">
                     <span>{m.team_a.name} vs {m.team_b.name}</span>
+                    <button
+                      onClick={() => onSelectMatch(m)}
+                      className="px-2 py-0.5 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-semibold text-[9px] cursor-pointer"
+                    >
+                      View Live Stats
+                    </button>
                   </div>
                   <div className="text-[10px] text-slate-400 font-mono">
                     <div className="flex justify-between">
@@ -351,10 +512,18 @@ export default function FederationAdminView({
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {upcoming.map(m => (
-                <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-slate-850 space-y-1">
-                  <div className="font-semibold text-slate-100">{m.team_a.name} vs {m.team_b.name}</div>
-                  <div className="text-[10px] text-slate-400 font-mono">Tournament: {m.tournament.name}</div>
-                  <div className="text-[10px] text-sports-cyan font-bold uppercase tracking-wider font-mono">Status: Scheduled</div>
+                <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-slate-850 flex justify-between items-center text-xs">
+                  <div>
+                    <div className="font-semibold text-slate-100">{m.team_a.name} vs {m.team_b.name}</div>
+                    <div className="text-[10px] text-slate-400 font-mono">Tournament: {m.tournament.name}</div>
+                    <div className="text-[10px] text-sports-cyan font-bold uppercase tracking-wider font-mono mt-0.5">Status: Scheduled</div>
+                  </div>
+                  <button
+                    onClick={() => onSelectMatch(m)}
+                    className="px-2 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-semibold text-[10px] cursor-pointer"
+                  >
+                    View Stats
+                  </button>
                 </div>
               ))}
             </div>
@@ -371,16 +540,24 @@ export default function FederationAdminView({
               {finished.map(m => {
                 const winnerName = m.winner_id === m.team_a_id ? m.team_a.name : (m.winner_id === m.team_b_id ? m.team_b.name : 'Draw / No Result');
                 return (
-                  <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-slate-850 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                  <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-slate-850 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 text-xs">
                     <div>
                       <div className="font-semibold text-slate-100">{m.team_a.name} vs {m.team_b.name}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">Tournament: {m.tournament.name}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">Tournament: {m.tournament.name}</div>
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                         Scores: {m.team_a.name} ({m.team_a_runs}/{m.team_a_wickets}) | {m.team_b.name} ({m.team_b_runs}/{m.team_b_wickets})
                       </div>
                     </div>
-                    <div className="bg-emerald-950/40 text-emerald-400 border border-emerald-900/40 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-wider">
-                      🏆 Winner: {winnerName}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => onSelectMatch(m)}
+                        className="px-2.5 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-semibold text-[10px] cursor-pointer"
+                      >
+                        View Stats
+                      </button>
+                      <div className="bg-emerald-950/40 text-emerald-400 border border-emerald-900/40 px-2.5 py-1 rounded text-[10px] font-mono font-bold uppercase tracking-wider">
+                        🏆 Winner: {winnerName}
+                      </div>
                     </div>
                   </div>
                 );

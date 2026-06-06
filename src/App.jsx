@@ -11,6 +11,7 @@ import SponsorView from './components/SponsorView'
 import ScorerView from './components/ScorerView'
 import LiveMatches from './components/LiveMatches'
 import Mailbox from './components/Mailbox'
+import MatchDetailsModal from './components/MatchDetailsModal'
 
 // Import API services
 import { api } from './services/api'
@@ -119,7 +120,9 @@ function App() {
   const [newDeptAdmin, setNewDeptAdmin] = useState({ full_name: '', email: '', password: '', department_id: '' })
   const [newFed, setNewFed] = useState({ name: '', admin_id: '' })
   const [newTourney, setNewTourney] = useState({
-    name: '', fee: 0, number_of_entry: 4, maximum_player_count: 5, team_limits: 5
+    name: '', fee: 0, number_of_entry: 4, maximum_player_count: 5, team_limits: 5, overs: 20,
+    city: '', ball_type: 'leather', start_date: '', end_date: '', timing_slots: 'Morning',
+    ground_name: '', prize_pools: '', free_or_paid: 'free', registration_start_date: '', registration_end_date: ''
   })
   const [newMatch, setNewMatch] = useState({ tournament_id: '', team_a_id: '', team_b_id: '', scorer_id: '' })
   const [newTeam, setNewTeam] = useState({ name: '', coach_id: '', player_ids: [] })
@@ -131,6 +134,7 @@ function App() {
   const [scoringForm, setScoringForm] = useState({ team: 'team_a', runs: 0, wickets: 0, overs: 0.0 })
   const [completeMatchModal, setCompleteMatchModal] = useState(null)
   const [playerPerformances, setPlayerPerformances] = useState([]) // list of { player_id, name, runs_scored, balls_faced, wickets_taken, runs_conceded }
+  const [selectedMatchAnalysis, setSelectedMatchAnalysis] = useState(null)
 
   // Global Feedback States
   const [errorMsg, setErrorMsg] = useState('')
@@ -459,7 +463,11 @@ function App() {
     try {
       await api.createTournament(token, newTourney)
       setSuccessMsg(`Tournament '${newTourney.name}' submitted to Department Admin for approval!`)
-      setNewTourney({ name: '', fee: 0, number_of_entry: 4, maximum_player_count: 5, team_limits: 5 })
+      setNewTourney({
+        name: '', fee: 0, number_of_entry: 4, maximum_player_count: 5, team_limits: 5, overs: 20,
+        city: '', ball_type: 'leather', start_date: '', end_date: '', timing_slots: 'Morning',
+        ground_name: '', prize_pools: '', free_or_paid: 'free', registration_start_date: '', registration_end_date: ''
+      })
       fetchAllCommonData()
     } catch (e) {
       setErrorMsg(e.message || 'Failed to create tournament.')
@@ -829,6 +837,7 @@ function App() {
                       handleDeleteFederation={handleDeleteFederation}
                       handleDeleteTournament={handleDeleteTournament}
                       notificationLogs={notificationLogs}
+                      onSelectMatch={setSelectedMatchAnalysis}
                     />
                   )}
 
@@ -851,6 +860,7 @@ function App() {
                       handleDeleteMatch={handleDeleteMatch}
                       handleDeleteFederation={handleDeleteFederation}
                       handleDeleteTournament={handleDeleteTournament}
+                      onSelectMatch={setSelectedMatchAnalysis}
                     />
                   )}
 
@@ -873,6 +883,7 @@ function App() {
                       handleApproveSponsorship={handleApproveSponsorship}
                       handleApproveScorer={handleApproveScorer}
                       matches={matches}
+                      onSelectMatch={setSelectedMatchAnalysis}
                     />
                   )}
 
@@ -1048,6 +1059,13 @@ function App() {
           Sports Cricket Tournament Management Portal &copy; {new Date().getFullYear()}. All rights reserved.
         </div>
       </footer>
+
+      {selectedMatchAnalysis && (
+        <MatchDetailsModal
+          match={selectedMatchAnalysis}
+          onClose={() => setSelectedMatchAnalysis(null)}
+        />
+      )}
 
     </div>
   )

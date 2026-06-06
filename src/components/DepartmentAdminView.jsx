@@ -15,7 +15,8 @@ export default function DepartmentAdminView({
   handleDeleteUser,
   handleDeleteMatch,
   handleDeleteFederation,
-  handleDeleteTournament
+  handleDeleteTournament,
+  onSelectMatch
 }) {
   if (activeTab === 'overview') {
     return (
@@ -271,12 +272,20 @@ export default function DepartmentAdminView({
                 <div className="text-slate-400 mt-1 font-mono">{m.tournament.name}</div>
                 <div className="text-slate-500 mt-0.5 capitalize">Status: {m.status}</div>
               </div>
-              <button
-                onClick={() => handleDeleteMatch(m.id)}
-                className="px-3 py-1 bg-red-900/60 hover:bg-red-800 text-red-200 rounded font-semibold"
-              >
-                Delete
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onSelectMatch(m)}
+                  className="px-3 py-1 bg-slate-900 hover:bg-slate-850 text-sports-cyan border border-slate-800 rounded font-semibold cursor-pointer transition duration-150"
+                >
+                  View Stats
+                </button>
+                <button
+                  onClick={() => handleDeleteMatch(m.id)}
+                  className="px-3 py-1 bg-red-950 hover:bg-red-900 text-red-200 rounded border border-red-900/50 font-semibold cursor-pointer transition duration-150"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           ))}
           {matches.length === 0 && (
