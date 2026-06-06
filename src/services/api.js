@@ -1,4 +1,4 @@
-const API_BASE = 'http://http://187.77.189.31:7000//api/v1';
+const API_BASE = 'http://187.77.189.31:7000/api/v1';
 
 const getHeaders = (token) => ({
   'Content-Type': 'application/json',
