@@ -54,19 +54,7 @@ export default function Auth({
           </button>
         </form>
 
-        {!isAdminPath && (
-          <div className="border-t border-slate-800 pt-4 text-center">
-            <button
-              onClick={() => {
-                setLoginForm({ email: '', password: '' });
-                setCurrentScreen('standard_login');
-              }}
-              className="text-sports-cyan hover:underline text-xs font-semibold cursor-pointer"
-            >
-              🏏 Return to Standard User Portal
-            </button>
-          </div>
-        )}
+
       </div>
     )
   }
@@ -185,40 +173,9 @@ export default function Auth({
         </button>
       </form>
 
-      <div className="border-t border-slate-800 pt-4 flex flex-col gap-3.5 text-center">
-        <div className="flex justify-between items-center text-xs">
-          <span className="text-slate-500">Need a standard account?</span>
-          <button
-            onClick={() => setCurrentScreen('register')}
-            className="text-sports-cyan hover:underline font-semibold cursor-pointer"
-          >
-            Create Account
-          </button>
-        </div>
 
-        {isAdminPath && (
-          <button
-            onClick={() => {
-              setLoginForm({ email: '', password: '' });
-              setCurrentScreen('admin_login');
-            }}
-            className="w-full py-2 rounded bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold text-xs uppercase tracking-wider transition cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-          >
-            🛡️ Access Administrator Portal
-          </button>
-        )}
-      </div>
 
-      <div className="border-t border-slate-800 pt-4 flex flex-col items-center gap-3">
-        <span className="text-slate-500 text-[10px]">For quick evaluation of all role dashboards:</span>
-        <button
-          type="button"
-          onClick={handleQuickSeed}
-          className="bg-sports-cyan/10 hover:bg-sports-cyan/20 border border-sports-cyan/35 text-sports-cyan text-[10px] font-semibold px-4 py-1.5 rounded transition cursor-pointer uppercase tracking-wider"
-        >
-          ⚡ Run Database Quick Seed
-        </button>
-      </div>
+
     </div>
   )
 }

@@ -3,26 +3,40 @@
 
 @theme {
   /* High-Contrast Premium Warm Light Theme Inversion Matrix */
-  --color-slate-50: #1a160d;      /* Darkest text (almost black) */
-  --color-slate-100: #231f16;     /* Primary text - Espresso */
-  --color-slate-200: #3a3427;     /* Medium-dark text */
-  --color-slate-300: #58503f;     /* Muted/Secondary text */
-  --color-slate-400: #756c59;     /* Label/placeholder text */
-  --color-slate-500: #938974;     /* Disabled text */
-  --color-slate-600: #b0a792;     /* Subtle grid lines */
-  --color-slate-700: #cdbfab;     /* Divider border */
-  --color-slate-800: #e7dac5;     /* Main border color (warm sand) */
-  --color-slate-900: #ffffff;     /* Card background - Crisp White for pop */
-  --color-slate-950: #ffffff;     /* Top header/container background - White */
+  --color-slate-50: #1a160d;
+  /* Darkest text (almost black) */
+  --color-slate-100: #231f16;
+  /* Primary text - Espresso */
+  --color-slate-200: #3a3427;
+  /* Medium-dark text */
+  --color-slate-300: #58503f;
+  /* Muted/Secondary text */
+  --color-slate-400: #756c59;
+  /* Label/placeholder text */
+  --color-slate-500: #938974;
+  /* Disabled text */
+  --color-slate-600: #b0a792;
+  /* Subtle grid lines */
+  --color-slate-700: #cdbfab;
+  /* Divider border */
+  --color-slate-800: #e7dac5;
+  /* Main border color (warm sand) */
+  --color-slate-900: #ffffff;
+  /* Card background - Crisp White for pop */
+  --color-slate-950: #ffffff;
+  /* Top header/container background - White */
 
   /* Mapped Indigo & Sky colors for compatibility & high contrast */
-  --color-indigo-400: #4338ca;   /* Deep royal indigo */
-  --color-sky-400: #0369a1;      /* Deep sky blue */
+  --color-indigo-400: #4338ca;
+  /* Deep royal indigo */
+  --color-sky-400: #0369a1;
+  /* Deep sky blue */
   --color-sky-500: #075985;
   --color-sky-800: #0c4a6e;
 
   /* Warm Accent Colors (Vibrant Amber/Gold) */
-  --color-sports-cyan: #d97706;   /* Rich warm gold/amber */
+  --color-sports-cyan: #d97706;
+  /* Rich warm gold/amber */
 
   --color-red-950: #fff5f5;
   --color-red-900: #fee2e2;

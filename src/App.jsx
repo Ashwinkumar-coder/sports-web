@@ -34,19 +34,27 @@ function App() {
           { id: 'departments', name: 'Departments', icon: '🏛️' },
           { id: 'admins', name: 'Admins', icon: '🛡️' },
           { id: 'federations', name: 'Federations', icon: '🏅' },
+          { id: 'users', name: 'All Users', icon: '👥' },
+          { id: 'tournaments', name: 'Tournaments', icon: '🏆' },
+          { id: 'matches', name: 'Matches', icon: '📅' },
+          { id: 'mailbox', name: 'Mailbox', icon: '📬' },
         ]
       case 'department_admin':
         return [
           { id: 'overview', name: 'Overview', icon: '📊' },
           { id: 'create_federation', name: 'Federations', icon: '🏅' },
           { id: 'approve_users', name: 'Users Approvals', icon: '👥' },
+          { id: 'users', name: 'All Users', icon: '👥' },
           { id: 'approve_tournaments', name: 'Tournaments', icon: '🏆' },
+          { id: 'matches', name: 'Matches', icon: '📅' },
         ]
       case 'federation_admin':
         return [
           { id: 'overview', name: 'Overview', icon: '📊' },
           { id: 'create_tournament', name: 'Tournaments', icon: '🏆' },
           { id: 'schedule_matches', name: 'Schedule Matches', icon: '📅' },
+          { id: 'approvals', name: 'Approvals', icon: '⚖️' },
+          { id: 'matches', name: 'Matches', icon: '📅' },
         ]
       case 'player':
         return [
@@ -82,14 +90,14 @@ function App() {
       }
     }
   }, [user])
-  
+
   // Forms & UI States
   const [currentScreen, setCurrentScreen] = useState(isAdminPath ? 'admin_login' : 'standard_login') // standard_login, admin_login, register
   const [loginForm, setLoginForm] = useState({ email: '', password: '' })
   const [regForm, setRegForm] = useState({
     email: '', password: '', full_name: '', role: 'player', department_id: '', federation_id: ''
   })
-  
+
   // Global Data lists
   const [departments, setDepartments] = useState([])
   const [federations, setFederations] = useState([])
@@ -97,12 +105,15 @@ function App() {
   const [tournaments, setTournaments] = useState([])
   const [matches, setMatches] = useState([])
   const [notificationLogs, setNotificationLogs] = useState([])
-  
+
   // Dashboard Specific States
   const [dashboardData, setDashboardData] = useState(null)
   const [pendingUsers, setPendingUsers] = useState([])
   const [pendingTournaments, setPendingTournaments] = useState([])
-  
+  const [pendingTeams, setPendingTeams] = useState([])
+  const [pendingSponsorships, setPendingSponsorships] = useState([])
+  const [pendingScorers, setPendingScorers] = useState([])
+
   // Creation Form States
   const [newDeptName, setNewDeptName] = useState('')
   const [newDeptAdmin, setNewDeptAdmin] = useState({ full_name: '', email: '', password: '', department_id: '' })
@@ -114,13 +125,13 @@ function App() {
   const [newTeam, setNewTeam] = useState({ name: '', coach_id: '', player_ids: [] })
   const [selectedTournament, setSelectedTournament] = useState(null)
   const [sponsorAmount, setSponsorAmount] = useState(100)
-  
+
   // Scorer States
   const [activeScoringMatch, setActiveScoringMatch] = useState(null)
   const [scoringForm, setScoringForm] = useState({ team: 'team_a', runs: 0, wickets: 0, overs: 0.0 })
   const [completeMatchModal, setCompleteMatchModal] = useState(null)
   const [playerPerformances, setPlayerPerformances] = useState([]) // list of { player_id, name, runs_scored, balls_faced, wickets_taken, runs_conceded }
-  
+
   // Global Feedback States
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
@@ -209,23 +220,28 @@ function App() {
     try {
       const deptData = await api.getDepartments(token)
       setDepartments(deptData)
-      
+
       const fedData = await api.getFederations(token)
       setFederations(fedData)
-      
+
       const tourneyData = await api.getTournaments(token)
       setTournaments(tourneyData)
-      
+
       const matchData = await api.getMatches(token)
       setMatches(matchData)
-      
-      const coaches = await api.getUsersByRole(token, 'coach')
-      const players = await api.getUsersByRole(token, 'player')
-      const scorers = await api.getUsersByRole(token, 'scorer')
-      const deptAdmins = await api.getUsersByRole(token, 'department_admin')
-      const fedAdmins = await api.getUsersByRole(token, 'federation_admin')
-      
-      setUsersList([...coaches, ...players, ...scorers, ...deptAdmins, ...fedAdmins])
+
+      let users = []
+      if (user && (user.role === 'super_admin' || user.role === 'department_admin')) {
+        users = await api.getUsersByRole(token, '', true)
+      } else {
+        const coaches = await api.getUsersByRole(token, 'coach')
+        const players = await api.getUsersByRole(token, 'player')
+        const scorers = await api.getUsersByRole(token, 'scorer')
+        const deptAdmins = await api.getUsersByRole(token, 'department_admin')
+        const fedAdmins = await api.getUsersByRole(token, 'federation_admin')
+        users = [...coaches, ...players, ...scorers, ...deptAdmins, ...fedAdmins]
+      }
+      setUsersList(users)
     } catch (e) {
       console.error(e)
     }
@@ -251,6 +267,13 @@ function App() {
         setPendingUsers(pendingRegs)
         const pendingTourneys = await api.getPendingTournaments(token)
         setPendingTournaments(pendingTourneys)
+      } else if (user.role === 'federation_admin') {
+        const pTeams = await api.getPendingTeams(token)
+        setPendingTeams(pTeams)
+        const pSpons = await api.getPendingSponsorships(token)
+        setPendingSponsorships(pSpons)
+        const pScorers = await api.getPendingScorers(token)
+        setPendingScorers(pScorers)
       }
     } catch (e) {
       console.error(e)
@@ -264,11 +287,11 @@ function App() {
     try {
       const data = await api.login(loginForm.email, loginForm.password)
       const profile = await api.getProfile(data.access_token)
-      
+
       if (type === 'admin' && profile.role !== 'super_admin') {
         throw new Error('Access Denied: Only Super Admin can access the Admin Portal.')
       }
-      
+
       if (type === 'standard' && profile.role === 'super_admin') {
         throw new Error('Access Denied: Super Admin must log in via the Admin Portal.')
       }
@@ -378,14 +401,31 @@ function App() {
         return
       }
 
+      let adminId = newFed.admin_id ? parseInt(newFed.admin_id) : null
+
+      if (newFed.new_admin_email && newFed.new_admin_password && newFed.new_admin_name) {
+        const regRes = await api.register({
+          email: newFed.new_admin_email,
+          password: newFed.new_admin_password,
+          full_name: newFed.new_admin_name,
+          role: 'federation_admin',
+          department_id: deptId,
+          federation_id: null
+        })
+        if (regRes && regRes.id) {
+          adminId = regRes.id
+          await api.approveUserRegistration(token, regRes.id)
+        }
+      }
+
       await api.createFederation(
         token,
         deptId,
         newFed.name,
-        newFed.admin_id ? parseInt(newFed.admin_id) : null
+        adminId
       )
       setSuccessMsg(`Federation '${newFed.name}' created successfully!`)
-      setNewFed({ name: '', admin_id: '' })
+      setNewFed({ name: '', admin_id: '', new_admin_name: '', new_admin_email: '', new_admin_password: '' })
       fetchAllCommonData()
     } catch (e) {
       setErrorMsg(e.message || 'Failed to create federation.')
@@ -547,6 +587,105 @@ function App() {
     setPlayerPerformances(copy)
   }
 
+  const handleDeleteUser = async (userId) => {
+    try {
+      await api.deleteUser(token, userId)
+      setSuccessMsg('User deleted successfully!')
+      fetchAllCommonData()
+      fetchRoleDashboard()
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to delete user.')
+    }
+  }
+
+  const handleBlockUser = async (userId) => {
+    try {
+      await api.blockUser(token, userId)
+      setSuccessMsg('User blocked successfully!')
+      fetchAllCommonData()
+      fetchRoleDashboard()
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to block user.')
+    }
+  }
+
+  const handleUnblockUser = async (userId) => {
+    try {
+      await api.unblockUser(token, userId)
+      setSuccessMsg('User unblocked successfully!')
+      fetchAllCommonData()
+      fetchRoleDashboard()
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to unblock user.')
+    }
+  }
+
+  const handleDeleteMatch = async (matchId) => {
+    try {
+      await api.deleteMatch(token, matchId)
+      setSuccessMsg('Match deleted successfully!')
+      fetchAllCommonData()
+      fetchRoleDashboard()
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to delete match.')
+    }
+  }
+
+  const handleDeleteFederation = async (fedId) => {
+    try {
+      await api.deleteFederation(token, fedId)
+      setSuccessMsg('Federation deleted successfully!')
+      fetchAllCommonData()
+      fetchRoleDashboard()
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to delete federation.')
+    }
+  }
+
+  const handleDeleteTournament = async (tourneyId) => {
+    try {
+      await api.deleteTournament(token, tourneyId)
+      setSuccessMsg('Tournament deleted successfully!')
+      fetchAllCommonData()
+      fetchRoleDashboard()
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to delete tournament.')
+    }
+  }
+
+  const handleApproveTeam = async (teamId) => {
+    try {
+      await api.approveTeam(token, teamId)
+      setSuccessMsg('Team registration approved!')
+      fetchRoleDashboard()
+      fetchAllCommonData()
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to approve team.')
+    }
+  }
+
+  const handleApproveSponsorship = async (sponsorshipId) => {
+    try {
+      await api.approveSponsorship(token, sponsorshipId)
+      setSuccessMsg('Sponsorship approved!')
+      fetchRoleDashboard()
+      fetchAllCommonData()
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to approve sponsorship.')
+    }
+  }
+
+  const handleApproveScorer = async (applicationId) => {
+    try {
+      await api.approveScorer(token, applicationId)
+      setSuccessMsg('Scorer application approved!')
+      fetchRoleDashboard()
+      fetchAllCommonData()
+    } catch (e) {
+      setErrorMsg(e.message || 'Failed to approve scorer.')
+    }
+  }
+
   const logout = () => {
     setToken('')
     setUser(null)
@@ -562,7 +701,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans">
-      
+
       {/* Header */}
       <header className="bg-slate-950 border-b border-slate-800 p-4 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -574,7 +713,6 @@ function App() {
             <span className="text-xl font-bold tracking-wider text-slate-100 uppercase">
               Sports<span className="text-sports-cyan">Cricket</span>
             </span>
-            <span className="bg-slate-800 text-slate-400 text-xs px-2 py-1 rounded border border-slate-700">POC Model</span>
           </div>
 
           {user && (
@@ -613,10 +751,10 @@ function App() {
 
       {/* Main Layout */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* Left Column: Forms and Dashboards */}
         <div className="col-span-1 lg:col-span-2 space-y-6">
-          {!token ? (
+          {!token || !user ? (
             <Auth
               loginForm={loginForm}
               setLoginForm={setLoginForm}
@@ -631,20 +769,19 @@ function App() {
               isAdminPath={isAdminPath}
             />
           ) : (
-            user && (
+            (
               <div className="flex flex-col md:flex-row gap-6">
-                
+
                 {/* Role Sidebar */}
                 <aside className="w-full md:w-56 shrink-0 flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none border-b md:border-b-0 md:border-r border-slate-800 pr-0 md:pr-4">
                   {getSidebarLinks(user.role).map((link) => (
                     <button
                       key={link.id}
                       onClick={() => setActiveTab(link.id)}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition cursor-pointer shrink-0 ${
-                        activeTab === link.id
+                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition cursor-pointer shrink-0 ${activeTab === link.id
                           ? 'bg-sports-cyan/15 text-sports-cyan border-l-2 border-sports-cyan'
                           : 'text-slate-400 hover:bg-slate-900/60 hover:text-slate-200'
-                      }`}
+                        }`}
                     >
                       <span className="text-sm">{link.icon}</span>
                       <span>{link.name}</span>
@@ -662,9 +799,11 @@ function App() {
                         {user.role.replace('_', ' ')} Dashboard
                       </h2>
                     </div>
-                    <div className="bg-sports-cyan/5 text-sports-cyan border border-sports-cyan/20 px-4 py-2 rounded-lg font-mono text-xs text-center">
-                      Account Approved: <span className="font-bold text-emerald-400">TRUE</span>
-                    </div>
+                    {!['super_admin', 'department_admin', 'federation_admin'].includes(user.role) && (
+                      <div className="bg-sports-cyan/5 text-sports-cyan border border-sports-cyan/20 px-4 py-2 rounded-lg font-mono text-xs text-center">
+                        Account Approved: <span className="font-bold text-emerald-400">TRUE</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Dashboard Views */}
@@ -681,6 +820,15 @@ function App() {
                       handleCreateDeptAdmin={handleCreateDeptAdmin}
                       loading={loading}
                       usersList={usersList}
+                      tournaments={tournaments}
+                      matches={matches}
+                      handleDeleteUser={handleDeleteUser}
+                      handleBlockUser={handleBlockUser}
+                      handleUnblockUser={handleUnblockUser}
+                      handleDeleteMatch={handleDeleteMatch}
+                      handleDeleteFederation={handleDeleteFederation}
+                      handleDeleteTournament={handleDeleteTournament}
+                      notificationLogs={notificationLogs}
                     />
                   )}
 
@@ -695,6 +843,14 @@ function App() {
                       handleApproveUser={handleApproveUser}
                       pendingTournaments={pendingTournaments}
                       handleApproveTournament={handleApproveTournament}
+                      departments={departments}
+                      federations={federations}
+                      tournaments={tournaments}
+                      matches={matches}
+                      handleDeleteUser={handleDeleteUser}
+                      handleDeleteMatch={handleDeleteMatch}
+                      handleDeleteFederation={handleDeleteFederation}
+                      handleDeleteTournament={handleDeleteTournament}
                     />
                   )}
 
@@ -710,6 +866,13 @@ function App() {
                       tournaments={tournaments}
                       usersList={usersList}
                       teamsListForSelectedMatchTourney={teamsListForSelectedMatchTourney}
+                      pendingTeams={pendingTeams}
+                      pendingSponsorships={pendingSponsorships}
+                      pendingScorers={pendingScorers}
+                      handleApproveTeam={handleApproveTeam}
+                      handleApproveSponsorship={handleApproveSponsorship}
+                      handleApproveScorer={handleApproveScorer}
+                      matches={matches}
                     />
                   )}
 
@@ -762,8 +925,8 @@ function App() {
                   )}
                 </div>
               </div>
-            )
-          )}
+          )
+        )}
         </div>
 
         {/* Right Column: Live Feed & Mailbox */}
@@ -783,7 +946,7 @@ function App() {
             </div>
 
             <form onSubmit={handleCompleteMatchSubmit} className="space-y-6">
-              
+
               <div className="bg-slate-900/60 p-4 rounded border border-slate-800">
                 <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Declare Winner</label>
                 <select name="winner" required className="w-full bg-slate-950 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 focus:outline-none">
@@ -882,7 +1045,7 @@ function App() {
       {/* Footer */}
       <footer className="bg-slate-950 border-t border-slate-900 text-center py-6 text-xs text-slate-600 mt-12">
         <div className="max-w-7xl mx-auto">
-          Sports Cricket Tournament Management Portal &copy; {new Date().getFullYear()}. Crafted for POC validation.
+          Sports Cricket Tournament Management Portal &copy; {new Date().getFullYear()}. All rights reserved.
         </div>
       </footer>
 

@@ -3,11 +3,19 @@ export default function DepartmentAdminView({
   newFed,
   setNewFed,
   handleCreateFederation,
-  usersList,
-  pendingUsers,
+  usersList = [],
+  pendingUsers = [],
   handleApproveUser,
-  pendingTournaments,
-  handleApproveTournament
+  pendingTournaments = [],
+  handleApproveTournament,
+  departments = [],
+  federations = [],
+  tournaments = [],
+  matches = [],
+  handleDeleteUser,
+  handleDeleteMatch,
+  handleDeleteFederation,
+  handleDeleteTournament
 }) {
   if (activeTab === 'overview') {
     return (
@@ -90,6 +98,35 @@ export default function DepartmentAdminView({
             </div>
           </form>
         </div>
+
+        {/* Existing Federations */}
+        <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-lg space-y-3">
+          <h4 className="font-bold text-slate-200">Active Federations</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            {federations.map(f => {
+              const dept = departments.find(d => d.id === f.department_id);
+              const adminUser = usersList.find(u => u.id === f.admin_id);
+              return (
+                <div key={f.id} className="bg-slate-950/60 p-3 rounded border border-slate-900 text-slate-300 flex justify-between items-center">
+                  <div>
+                    <div className="font-bold text-slate-200">🏅 {f.name}</div>
+                    <div className="text-[10px] text-slate-500 mt-1">Supervising Dept: {dept ? dept.name : 'None'}</div>
+                    <div className="text-[10px] text-indigo-400 mt-1">Admin: {adminUser ? adminUser.full_name : 'None'}</div>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteFederation(f.id)}
+                    className="px-2 py-1 bg-red-900/60 hover:bg-red-800 text-red-200 rounded text-[10px]"
+                  >
+                    Delete
+                  </button>
+                </div>
+              );
+            })}
+            {federations.length === 0 && (
+              <p className="text-slate-500 italic">No federations created yet.</p>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
@@ -152,6 +189,98 @@ export default function DepartmentAdminView({
                 </div>
               ))}
             </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTab === 'users') {
+    return (
+      <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-lg space-y-4">
+        <h3 className="font-bold text-lg text-slate-200">All Department Users</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs text-slate-300 border-collapse">
+            <thead>
+              <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider">
+                <th className="py-2 px-3">Name</th>
+                <th className="py-2 px-3">Email</th>
+                <th className="py-2 px-3">Role</th>
+                <th className="py-2 px-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usersList.map(u => (
+                <tr key={u.id} className="border-b border-slate-850 hover:bg-slate-900/20">
+                  <td className="py-2 px-3 font-semibold">{u.full_name}</td>
+                  <td className="py-2 px-3 font-mono">{u.email}</td>
+                  <td className="py-2 px-3 capitalize">{u.role.replace('_', ' ')}</td>
+                  <td className="py-2 px-3">
+                    {u.is_approved ? (
+                      <span className="text-emerald-400 font-bold bg-emerald-950/35 px-1.5 py-0.5 rounded">Active</span>
+                    ) : (
+                      <span className="text-amber-400 bg-amber-950/35 px-1.5 py-0.5 rounded">Pending/Blocked</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTab === 'tournaments') {
+    return (
+      <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-lg space-y-4">
+        <h3 className="font-bold text-lg text-slate-200">Tournaments</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {tournaments.map(t => (
+            <div key={t.id} className="bg-slate-950/60 p-4 rounded border border-slate-800 flex justify-between items-center text-xs">
+              <div>
+                <div className="font-bold text-slate-200 text-sm">🏆 {t.name}</div>
+                <div className="text-slate-400 mt-1 capitalize">Status: {t.status.replace('_', ' ')}</div>
+                <div className="text-slate-500 mt-0.5">Slots: {t.teams ? t.teams.length : 0} / {t.number_of_entry} Teams</div>
+              </div>
+              <button
+                onClick={() => handleDeleteTournament(t.id)}
+                className="px-3 py-1 bg-red-900/60 hover:bg-red-800 text-red-200 rounded font-semibold"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+          {tournaments.length === 0 && (
+            <p className="text-slate-500 italic">No tournaments available.</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTab === 'matches') {
+    return (
+      <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-lg space-y-4">
+        <h3 className="font-bold text-lg text-slate-200">Scheduled Matches</h3>
+        <div className="space-y-3">
+          {matches.map(m => (
+            <div key={m.id} className="bg-slate-950/60 p-4 rounded border border-slate-850 flex justify-between items-center text-xs">
+              <div>
+                <div className="font-semibold text-slate-100">{m.team_a.name} vs {m.team_b.name}</div>
+                <div className="text-slate-400 mt-1 font-mono">{m.tournament.name}</div>
+                <div className="text-slate-500 mt-0.5 capitalize">Status: {m.status}</div>
+              </div>
+              <button
+                onClick={() => handleDeleteMatch(m.id)}
+                className="px-3 py-1 bg-red-900/60 hover:bg-red-800 text-red-200 rounded font-semibold"
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+          {matches.length === 0 && (
+            <p className="text-slate-500 italic text-center py-4">No matches scheduled yet.</p>
           )}
         </div>
       </div>

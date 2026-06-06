@@ -44,8 +44,8 @@ export const api = {
     return handleResponse(res);
   },
 
-  getUsersByRole: async (token, role) => {
-    const res = await fetch(`${API_BASE}/auth/users?role=${role}`, {
+  getUsersByRole: async (token, role, allUsers = false) => {
+    const res = await fetch(`${API_BASE}/auth/users?role=${role || ''}${allUsers ? '&all_users=true' : ''}`, {
       headers: getHeaders(token),
     });
     return handleResponse(res);
@@ -227,6 +227,108 @@ export const api = {
 
   getScorerDashboard: async (token) => {
     const res = await fetch(`${API_BASE}/dashboard/scorer`, {
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  // Admin and Federation extensions
+  deleteUser: async (token, userId) => {
+    const res = await fetch(`${API_BASE}/admin/users/${userId}`, {
+      method: 'DELETE',
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  blockUser: async (token, userId) => {
+    const res = await fetch(`${API_BASE}/admin/users/${userId}/block`, {
+      method: 'POST',
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  unblockUser: async (token, userId) => {
+    const res = await fetch(`${API_BASE}/admin/users/${userId}/unblock`, {
+      method: 'POST',
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  deleteMatch: async (token, matchId) => {
+    const res = await fetch(`${API_BASE}/admin/matches/${matchId}`, {
+      method: 'DELETE',
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  deleteFederation: async (token, fedId) => {
+    const res = await fetch(`${API_BASE}/admin/federations/${fedId}`, {
+      method: 'DELETE',
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  deleteTournament: async (token, tourneyId) => {
+    const res = await fetch(`${API_BASE}/admin/tournaments/${tourneyId}`, {
+      method: 'DELETE',
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  getPendingTeams: async (token) => {
+    const res = await fetch(`${API_BASE}/federation/pending-teams`, {
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  getPendingSponsorships: async (token) => {
+    const res = await fetch(`${API_BASE}/federation/pending-sponsorships`, {
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  getPendingScorers: async (token) => {
+    const res = await fetch(`${API_BASE}/federation/pending-scorers`, {
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  approveTeam: async (token, teamId) => {
+    const res = await fetch(`${API_BASE}/federation/teams/${teamId}/approve`, {
+      method: 'POST',
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  approveSponsorship: async (token, sponsorshipId) => {
+    const res = await fetch(`${API_BASE}/federation/sponsorships/${sponsorshipId}/approve`, {
+      method: 'POST',
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  approveScorer: async (token, applicationId) => {
+    const res = await fetch(`${API_BASE}/federation/scorers/${applicationId}/approve`, {
+      method: 'POST',
+      headers: getHeaders(token),
+    });
+    return handleResponse(res);
+  },
+
+  applyScorer: async (token, tournamentId) => {
+    const res = await fetch(`${API_BASE}/tournaments/${tournamentId}/apply-scorer`, {
+      method: 'POST',
       headers: getHeaders(token),
     });
     return handleResponse(res);
