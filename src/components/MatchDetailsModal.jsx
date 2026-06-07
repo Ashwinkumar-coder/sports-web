@@ -148,11 +148,17 @@ export default function MatchDetailsModal({ match, onClose }) {
     const extrasR = seededRandom(extrasSeed);
     const totalExtras = Math.max(1, Math.min(runs, Math.round(extrasR * 12)));
     const wd = Math.round(totalExtras * 0.5);
-    const nb = Math.round(totalExtras * 0.1);
-    const lb = Math.round(totalExtras * 0.2);
-    const bExtra = totalExtras - wd - nb - lb;
+    const nb = totalExtras - wd; // Keep all extras as wides/no-balls so bowler runs = total runs
+    const lb = 0;
+    const bExtra = 0;
 
     let remainingRuns = Math.max(0, runs - totalExtras);
+
+    // Calculate total deliveries for batting stats
+    const oversInt = Math.floor(totalOvers);
+    const ballsInOver = Math.round((totalOvers - oversInt) * 10);
+    const validBalls = oversInt * 6 + ballsInOver;
+    let remainingBalls = validBalls + wd + nb;
 
     // Batting
     for (let i = 0; i < squadLength; i++) {
@@ -173,19 +179,27 @@ export default function MatchDetailsModal({ match, onClose }) {
           statusText = `c & b ${bowlerName}`;
           pRuns = Math.round(r * (remainingRuns / (wicketsFallen - i + 1)));
           remainingRuns -= pRuns;
+          
+          pBalls = Math.round(r * (remainingBalls / (wicketsFallen - i + 1)));
+          remainingBalls -= pBalls;
         } else {
           statusText = 'Not Out';
           if (i === wicketsFallen && wicketsFallen + 1 < squadLength) {
             pRuns = Math.round(r * remainingRuns);
             remainingRuns -= pRuns;
+            
+            pBalls = Math.round(r * remainingBalls);
+            remainingBalls -= pBalls;
           } else {
             pRuns = remainingRuns;
             remainingRuns = 0;
+            
+            pBalls = remainingBalls;
+            remainingBalls = 0;
           }
         }
-        pBalls = Math.max(pRuns + 2, Math.round(r * 30) + 5);
         fours = Math.max(0, Math.floor(r * (pRuns / 4)));
-        sixes = Math.max(0, Math.floor((r * (pRuns - fours * 4)) / 6));
+        sixes = Math.max(0, Math.floor((pRuns - fours * 4) / 6));
       }
 
       if (statusText !== 'Yet to bat') {
@@ -201,18 +215,29 @@ export default function MatchDetailsModal({ match, onClose }) {
     }
 
     // Bowling (the opponent team's players bowl)
-    const overShare = totalOvers / Math.max(1, bowlersCount);
     let remainingWickets = wicketsFallen;
-    let remainingConceded = runs - lb - bExtra; // Conceded runs excludes legbyes and byes
-    if (remainingConceded < 0) remainingConceded = 0;
+    let remainingConceded = runs - lb - bExtra; // Conceded runs
+    
+    // Distribute valid balls among bowlers
+    let remainingValidBalls = validBalls;
 
     for (let i = 0; i < bowlersCount; i++) {
       const bowName = opponentSquad[opponentLength - 1 - i];
       const seed = matchId * 200 + seedOffset + i;
       const r = seededRandom(seed);
-
-      const bOvers = parseFloat(overShare.toFixed(1));
       
+      let bBalls = 0;
+      if (i === bowlersCount - 1) {
+        bBalls = remainingValidBalls;
+      } else {
+        bBalls = Math.min(remainingValidBalls, Math.round(r * (remainingValidBalls / (bowlersCount - i) * 1.5)));
+        bBalls = Math.floor(bBalls / 6) * 6; // Try to give complete overs where possible
+        if (bBalls === 0 && remainingValidBalls >= 6) bBalls = 6;
+        remainingValidBalls -= bBalls;
+      }
+      
+      const bOvers = Math.floor(bBalls / 6) + (bBalls % 6) / 10;
+
       let bWickets = 0;
       if (i === bowlersCount - 1) {
         bWickets = remainingWickets;
