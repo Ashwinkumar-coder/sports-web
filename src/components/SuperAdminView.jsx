@@ -23,7 +23,8 @@ export default function SuperAdminView({
   handleDeleteTournament,
   notificationLogs = [],
   onSelectMatch
-}) {
+}) 
+{
   const [expandedTournaments, setExpandedTournaments] = useState({});
 
   const toggleTournament = (id) => {
@@ -61,6 +62,7 @@ export default function SuperAdminView({
             <span className="text-2xl font-black text-amber-400 mt-1">{matches.length}</span>
           </div>
         </div>
+        
 
         {/* Quick Lists */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -52,6 +52,7 @@ export default function SponsorView({
     );
   }
 
+  
   if (activeTab === 'fund_tournament') {
     const fundedTourneys = tournaments.filter(t => t.is_approved);
     return (
