@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, Calendar, Users, Award, PlusCircle, Check, 
   Play, Ban, ShieldCheck, HeartHandshake, UserCheck, 
-  MapPin, Coins, Sparkles, Plus, Info, Clock, AlertCircle
+  MapPin, Coins, Sparkles, Plus, Info, Clock, AlertCircle, Trash2
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
+import StaticCharts from './StaticCharts';
 
 // Framer Motion variants
 const containerVariants = {
@@ -53,6 +54,9 @@ export default function FederationAdminView({
   handleApproveTeam,
   handleApproveSponsorship,
   handleApproveScorer,
+  handleDeleteTeam,
+  handleDeleteSponsorship,
+  handleDeleteScorer,
   matches = [],
   onSelectMatch
 }) {
@@ -145,7 +149,7 @@ export default function FederationAdminView({
                           glow={!t.is_approved}
                           oscillate={!t.is_approved}
                         >
-                          {t.is_approved ? 'Approved' : 'Pending Approval'}
+                          {t.is_approved ? 'Approved' : 'Pending'}
                         </Badge>
                       </div>
                     </motion.div>
@@ -153,6 +157,9 @@ export default function FederationAdminView({
                 </motion.div>
               )}
             </Card>
+
+            {/* Static Analytics Charts */}
+            <StaticCharts />
           </div>
         )}
 
@@ -527,14 +534,24 @@ export default function FederationAdminView({
                           <span className="font-extrabold text-[var(--text-primary)] text-sm">{team.name}</span>
                           <span className="block text-xs text-[var(--text-secondary)] mt-1">Coach: {team.coach ? team.coach.full_name : 'N/A'}</span>
                         </div>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={Check}
-                          onClick={() => handleApproveTeam(team.id)}
-                        >
-                          Approve
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={Check}
+                            onClick={() => handleApproveTeam(team.id)}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => handleDeleteTeam(team.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </motion.div>
                   ))}
@@ -566,14 +583,24 @@ export default function FederationAdminView({
                           <span className="font-extrabold text-[var(--text-primary)] text-sm">Sponsor: {s.sponsor.full_name}</span>
                           <span className="block text-xs text-emerald-500 font-bold mt-1">Amount Pledged: ${s.amount}</span>
                         </div>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={Check}
-                          onClick={() => handleApproveSponsorship(s.id)}
-                        >
-                          Approve
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={Check}
+                            onClick={() => handleApproveSponsorship(s.id)}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => handleDeleteSponsorship(s.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </motion.div>
                   ))}
@@ -605,14 +632,24 @@ export default function FederationAdminView({
                           <span className="font-extrabold text-[var(--text-primary)] text-sm">{app.scorer.full_name}</span>
                           <span className="block text-xs text-[var(--text-secondary)] mt-1">Tournament: {app.tournament.name}</span>
                         </div>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          icon={Check}
-                          onClick={() => handleApproveScorer(app.id)}
-                        >
-                          Approve
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            icon={Check}
+                            onClick={() => handleApproveScorer(app.id)}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            icon={Trash2}
+                            onClick={() => handleDeleteScorer(app.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </motion.div>
                   ))}

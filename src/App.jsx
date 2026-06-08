@@ -31,6 +31,7 @@ function App() {
   const [user, setUser] = useState(null)
 
   const [activeTab, setActiveTab] = useState('overview')
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Get sidebar links based on role
   const getSidebarLinks = (role) => {
@@ -38,9 +39,13 @@ function App() {
       case 'super_admin':
         return [
           { id: 'overview', name: 'Overview', icon: '📊' },
+          { id: 'sports_analytics', name: 'Sports Analytics', icon: '📈' },
           { id: 'departments', name: 'Departments', icon: '🏛️' },
-          { id: 'admins', name: 'Admins', icon: '🛡️' },
           { id: 'federations', name: 'Federations', icon: '🏅' },
+          { id: 'players', name: 'Player Stats', icon: '👥' },
+          { id: 'records', name: 'Records', icon: '🎗️' },
+          { id: 'reports', name: 'Reports', icon: '📋' },
+          { id: 'admins', name: 'Admins', icon: '🛡️' },
           { id: 'users', name: 'All Users', icon: '👥' },
           { id: 'tournaments', name: 'Tournaments', icon: '🏆' },
           { id: 'matches', name: 'Matches', icon: '📅' },
@@ -201,6 +206,21 @@ function App() {
     return () => clearInterval(interval)
   }, [token])
 
+  // Route security check: only super_admin on /admin
+  useEffect(() => {
+    if (user) {
+      if (isAdminPath && user.role !== 'super_admin') {
+        setToken('')
+        setUser(null)
+        setErrorMsg('Access Denied: Only Super Admin is allowed on /admin.')
+      } else if (!isAdminPath && user.role === 'super_admin') {
+        setToken('')
+        setUser(null)
+        setErrorMsg('Access Denied: Super Admin must access via the Admin Portal.')
+      }
+    }
+  }, [isAdminPath, user])
+
   // Fetch data based on role
   useEffect(() => {
     if (user) {
@@ -212,9 +232,16 @@ function App() {
   const fetchUserProfile = async () => {
     try {
       const data = await api.getProfile(token)
+      if (isAdminPath && data.role !== 'super_admin') {
+        throw new Error('Access Denied: Only Super Admin can access the Admin Portal.')
+      }
+      if (!isAdminPath && data.role === 'super_admin') {
+        throw new Error('Access Denied: Super Admin must log in via the Admin Portal.')
+      }
       setUser(data)
     } catch (e) {
       console.error(e)
+      setErrorMsg(e.message || 'Access Denied.')
       setToken('')
     }
   }
@@ -709,6 +736,21 @@ function App() {
     }
   }
 
+  const handleDeleteTeam = (teamId) => {
+    setPendingTeams(prev => prev.filter(t => t.id !== teamId))
+    setSuccessMsg('Team registration request deleted!')
+  }
+
+  const handleDeleteSponsorship = (sponsorshipId) => {
+    setPendingSponsorships(prev => prev.filter(s => s.id !== sponsorshipId))
+    setSuccessMsg('Sponsorship pledge request deleted!')
+  }
+
+  const handleDeleteScorer = (scorerId) => {
+    setPendingScorers(prev => prev.filter(s => s.id !== scorerId))
+    setSuccessMsg('Scorer application request deleted!')
+  }
+
   const logout = () => {
     setToken('')
     setUser(null)
@@ -722,10 +764,15 @@ function App() {
     return t.teams
   }
 
+  const isAdmin = user && ['super_admin', 'department_admin', 'federation_admin'].includes(user.role);
+  const showRightColumn = isAdmin
+    ? activeTab === 'overview'
+    : (activeTab !== 'mailbox' && activeTab !== 'matches');
+
   return (
     <div className="min-h-screen flex flex-col bg-[var(--bg-page)] text-[var(--text-primary)] transition-all duration-300">
 
-      <Navbar user={user} logout={logout} theme={theme} onToggleTheme={toggleTheme} />
+      <Navbar user={user} logout={logout} theme={theme} onToggleTheme={toggleTheme} notificationLogs={notificationLogs} onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
 
       {/* Toast Alerts */}
       <div className="max-w-7xl w-full mx-auto px-6 mt-4">
@@ -760,219 +807,227 @@ function App() {
       </div>
 
       {/* Main Layout */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4">
-        {!token || !user ? (
-          <div className="flex items-center justify-center min-h-[70vh] w-full">
-            <div className="w-full max-w-md">
-              <Auth
-                loginForm={loginForm}
-                setLoginForm={setLoginForm}
-                regForm={regForm}
-                setRegForm={setRegForm}
-                currentScreen={currentScreen}
-                setCurrentScreen={setCurrentScreen}
-                handleLogin={handleLogin}
-                handleRegister={handleRegister}
-                handleQuickSeed={handleQuickSeed}
-                loading={loading}
-                isAdminPath={isAdminPath}
+      <div className="flex-1 flex flex-col md:flex-row relative">
+        {token && user && (
+          <>
+            {/* Sidebar Mobile Overlay Background */}
+            {sidebarOpen && (
+              <div 
+                className="fixed inset-0 z-35 bg-black/60 md:hidden"
+                onClick={() => setSidebarOpen(false)}
               />
-            </div>
-          </div>
-        ) : (
-          <div className={`grid grid-cols-1 gap-6 ${
-            activeTab === 'mailbox' || activeTab === 'matches'
-              ? 'lg:grid-cols-1'
-              : 'lg:grid-cols-3'
-          }`}>
-            {/* Left Column: Forms and Dashboards */}
-            <div className={`space-y-6 ${
-              activeTab === 'mailbox' || activeTab === 'matches'
-                ? 'col-span-1'
-                : 'col-span-1 lg:col-span-2'
-            }`}>
-              <div className="flex flex-col md:flex-row gap-6">
-
-                {/* Role Sidebar */}
-                <aside className="w-full md:w-56 shrink-0 flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none border-b md:border-b-0 md:border-r border-[var(--border-default)] pr-0 md:pr-4">
-                  {getSidebarLinks(user.role).map((link) => {
-                    const isActive = activeTab === link.id;
-                    return (
-                      <button
-                        key={link.id}
-                        onClick={() => setActiveTab(link.id)}
-                        className={`relative flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all duration-200 cursor-pointer shrink-0 ${isActive
-                            ? 'text-[var(--accent)]'
-                            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sidebar-hover)]'
-                          }`}
-                      >
-                        {isActive && (
-                          <motion.div
-                            layoutId="activeSidebarIndicator"
-                            className="absolute inset-0 bg-[var(--bg-sidebar-active)] rounded-xl z-0"
-                            transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                          />
-                        )}
-                        <span className="text-sm relative z-10">{link.icon}</span>
-                        <span className="relative z-10">{link.name}</span>
-                      </button>
-                    );
-                  })}
-                </aside>
-
-                {/* Dashboard Views Content Panel */}
-                <div className="flex-1 min-w-0">
-                  {/* Dashboard Header Banner */}
-                  <div className="border-b-2 border-[var(--accent)] pb-3 mb-6 flex items-center justify-between">
-                    <div>
-                      <h2 className="text-2xl font-extrabold text-[var(--text-primary)] font-display tracking-tight uppercase">
-                        {user.role.replace(/_/g, ' ')} Dashboard
-                      </h2>
-                      <p className="text-xs text-[var(--text-secondary)] font-semibold mt-0.5">
-                        National Sports Tournament Management System
-                      </p>
-                    </div>
-                    {!['super_admin', 'department_admin', 'federation_admin'].includes(user.role) && (
-                      <Badge variant="success" glow className="py-1 px-3">
-                        Account Approved
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Dashboard Views */}
-                  {user.role === 'super_admin' && (
-                    <SuperAdminView
-                      activeTab={activeTab}
-                      newDeptName={newDeptName}
-                      setNewDeptName={setNewDeptName}
-                      handleCreateDept={handleCreateDept}
-                      departments={departments}
-                      federations={federations}
-                      newDeptAdmin={newDeptAdmin}
-                      setNewDeptAdmin={setNewDeptAdmin}
-                      handleCreateDeptAdmin={handleCreateDeptAdmin}
-                      loading={loading}
-                      usersList={usersList}
-                      tournaments={tournaments}
-                      matches={matches}
-                      handleDeleteUser={handleDeleteUser}
-                      handleBlockUser={handleBlockUser}
-                      handleUnblockUser={handleUnblockUser}
-                      handleDeleteMatch={handleDeleteMatch}
-                      handleDeleteFederation={handleDeleteFederation}
-                      handleDeleteTournament={handleDeleteTournament}
-                      notificationLogs={notificationLogs}
-                      onSelectMatch={setSelectedMatchAnalysis}
-                    />
-                  )}
-
-                  {user.role === 'department_admin' && (
-                    <DepartmentAdminView
-                      activeTab={activeTab}
-                      newFed={newFed}
-                      setNewFed={setNewFed}
-                      handleCreateFederation={handleCreateFederation}
-                      usersList={usersList}
-                      pendingUsers={pendingUsers}
-                      handleApproveUser={handleApproveUser}
-                      pendingTournaments={pendingTournaments}
-                      handleApproveTournament={handleApproveTournament}
-                      departments={departments}
-                      federations={federations}
-                      tournaments={tournaments}
-                      matches={matches}
-                      handleDeleteUser={handleDeleteUser}
-                      handleDeleteMatch={handleDeleteMatch}
-                      handleDeleteFederation={handleDeleteFederation}
-                      handleDeleteTournament={handleDeleteTournament}
-                      onSelectMatch={setSelectedMatchAnalysis}
-                    />
-                  )}
-
-                  {user.role === 'federation_admin' && (
-                    <FederationAdminView
-                      activeTab={activeTab}
-                      newTourney={newTourney}
-                      setNewTourney={setNewTourney}
-                      handleCreateTournament={handleCreateTournament}
-                      newMatch={newMatch}
-                      setNewMatch={setNewMatch}
-                      handleScheduleMatch={handleScheduleMatch}
-                      tournaments={tournaments}
-                      usersList={usersList}
-                      teamsListForSelectedMatchTourney={teamsListForSelectedMatchTourney}
-                      pendingTeams={pendingTeams}
-                      pendingSponsorships={pendingSponsorships}
-                      pendingScorers={pendingScorers}
-                      handleApproveTeam={handleApproveTeam}
-                      handleApproveSponsorship={handleApproveSponsorship}
-                      handleApproveScorer={handleApproveScorer}
-                      matches={matches}
-                      onSelectMatch={setSelectedMatchAnalysis}
-                    />
-                  )}
-
-                  {user.role === 'player' && dashboardData && (
-                    <PlayerView
-                      activeTab={activeTab}
-                      dashboardData={dashboardData}
-                      tournaments={tournaments}
-                      selectedTournament={selectedTournament}
-                      setSelectedTournament={setSelectedTournament}
-                      newTeam={newTeam}
-                      setNewTeam={setNewTeam}
-                      usersList={usersList}
-                      handleRegisterTeam={handleRegisterTeam}
-                      currentUser={user}
-                    />
-                  )}
-
-                  {user.role === 'coach' && dashboardData && (
-                    <CoachView
-                      activeTab={activeTab}
-                      dashboardData={dashboardData}
-                    />
-                  )}
-
-                  {user.role === 'sponsor' && dashboardData && (
-                    <SponsorView
-                      activeTab={activeTab}
-                      dashboardData={dashboardData}
-                      tournaments={tournaments}
-                      sponsorAmount={sponsorAmount}
-                      setSponsorAmount={setSponsorAmount}
-                      handleSponsorTournament={handleSponsorTournament}
-                    />
-                  )}
-
-                  {user.role === 'scorer' && dashboardData && (
-                    <ScorerView
-                      activeTab={activeTab}
-                      dashboardData={dashboardData}
-                      activeScoringMatch={activeScoringMatch}
-                      setActiveScoringMatch={setActiveScoringMatch}
-                      scoringForm={scoringForm}
-                      setScoringForm={setScoringForm}
-                      handleUpdateLiveScore={handleUpdateLiveScore}
-                      openCompletionModal={openCompletionModal}
-                      matches={matches}
-                      handleStartScoring={handleStartScoring}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Live Feed & Mailbox — hidden when their tab is active */}
-            {activeTab !== 'mailbox' && activeTab !== 'matches' && (
-              <div className="space-y-6 col-span-1">
-                <LiveMatches matches={matches} onSelectMatch={setSelectedMatchAnalysis} />
-                <Mailbox notificationLogs={notificationLogs} />
-              </div>
             )}
-          </div>
+
+            {/* Left Sidebar Layout */}
+            <aside className={`fixed md:sticky top-0 md:top-0 bottom-0 left-0 z-40 w-60 bg-[var(--bg-panel)] border-r border-[var(--border-default)] p-4 flex flex-col gap-1.5 shrink-0 transform transition-transform duration-300 md:translate-x-0 h-full md:h-[calc(100vh-4rem)] overflow-y-auto ${
+              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}>
+              <div className="flex justify-between items-center mb-4 md:hidden border-b border-[var(--border-default)] pb-2">
+                <span className="font-extrabold uppercase tracking-wider text-xs text-[var(--accent-text)]">Navigation</span>
+                <button onClick={() => setSidebarOpen(false)} className="p-1 hover:bg-[var(--bg-sidebar-hover)] rounded text-sm font-bold">&times;</button>
+              </div>
+
+              {getSidebarLinks(user.role).map((link) => {
+                const isActive = activeTab === link.id;
+                return (
+                  <button
+                    key={link.id}
+                    onClick={() => {
+                      setActiveTab(link.id);
+                      setSidebarOpen(false);
+                    }}
+                    className={`relative flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-extrabold uppercase tracking-wider transition-all duration-200 cursor-pointer shrink-0 ${isActive
+                      ? 'text-[var(--accent)]'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sidebar-hover)]'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeSidebarIndicator"
+                        className="absolute inset-0 bg-[var(--bg-sidebar-active)] rounded-xl z-0"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <span className="text-sm relative z-10">{link.icon}</span>
+                    <span className="relative z-10">{link.name}</span>
+                  </button>
+                );
+              })}
+            </aside>
+          </>
         )}
-      </main>
+
+        {/* Dashboard Content Area */}
+        <main className="flex-1 p-4 sm:p-6 min-w-0 max-w-7xl mx-auto w-full">
+          {!token || !user ? (
+            <div className="flex items-center justify-center min-h-[70vh] w-full">
+              <div className="w-full max-w-md">
+                <Auth
+                  loginForm={loginForm}
+                  setLoginForm={setLoginForm}
+                  regForm={regForm}
+                  setRegForm={setRegForm}
+                  currentScreen={currentScreen}
+                  setCurrentScreen={setCurrentScreen}
+                  handleLogin={handleLogin}
+                  handleRegister={handleRegister}
+                  handleQuickSeed={handleQuickSeed}
+                  loading={loading}
+                  isAdminPath={isAdminPath}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Dashboard Header Banner */}
+              <div className="border-b-2 border-[var(--accent)] pb-3 mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-extrabold text-[var(--text-primary)] font-display tracking-tight uppercase">
+                    {user.role.replace(/_/g, ' ')} Dashboard
+                  </h2>
+                  <p className="text-xs text-[var(--text-secondary)] font-semibold mt-0.5">
+                    National Sports Tournament Management System
+                  </p>
+                </div>
+                {!['super_admin', 'department_admin', 'federation_admin'].includes(user.role) && (
+                  <Badge variant="success" glow className="py-1 px-3">
+                    Account Approved
+                  </Badge>
+                )}
+              </div>
+
+              {/* Dashboard Views */}
+              {user.role === 'super_admin' && (
+                <SuperAdminView
+                  activeTab={activeTab}
+                  newDeptName={newDeptName}
+                  setNewDeptName={setNewDeptName}
+                  handleCreateDept={handleCreateDept}
+                  departments={departments}
+                  federations={federations}
+                  newDeptAdmin={newDeptAdmin}
+                  setNewDeptAdmin={setNewDeptAdmin}
+                  handleCreateDeptAdmin={handleCreateDeptAdmin}
+                  loading={loading}
+                  usersList={usersList}
+                  tournaments={tournaments}
+                  matches={matches}
+                  handleDeleteUser={handleDeleteUser}
+                  handleBlockUser={handleBlockUser}
+                  handleUnblockUser={handleUnblockUser}
+                  handleDeleteMatch={handleDeleteMatch}
+                  handleDeleteFederation={handleDeleteFederation}
+                  handleDeleteTournament={handleDeleteTournament}
+                  notificationLogs={notificationLogs}
+                  onSelectMatch={setSelectedMatchAnalysis}
+                />
+              )}
+
+              {user.role === 'department_admin' && (
+                <DepartmentAdminView
+                  activeTab={activeTab}
+                  newFed={newFed}
+                  setNewFed={setNewFed}
+                  handleCreateFederation={handleCreateFederation}
+                  usersList={usersList}
+                  pendingUsers={pendingUsers}
+                  handleApproveUser={handleApproveUser}
+                  pendingTournaments={pendingTournaments}
+                  handleApproveTournament={handleApproveTournament}
+                  departments={departments}
+                  federations={federations}
+                  tournaments={tournaments}
+                  matches={matches}
+                  handleDeleteUser={handleDeleteUser}
+                  handleDeleteMatch={handleDeleteMatch}
+                  handleDeleteFederation={handleDeleteFederation}
+                  handleDeleteTournament={handleDeleteTournament}
+                  onSelectMatch={setSelectedMatchAnalysis}
+                />
+              )}
+
+              {user.role === 'federation_admin' && (
+                <FederationAdminView
+                  activeTab={activeTab}
+                  newTourney={newTourney}
+                  setNewTourney={setNewTourney}
+                  handleCreateTournament={handleCreateTournament}
+                  newMatch={newMatch}
+                  setNewMatch={setNewMatch}
+                  handleScheduleMatch={handleScheduleMatch}
+                  tournaments={tournaments}
+                  usersList={usersList}
+                  teamsListForSelectedMatchTourney={teamsListForSelectedMatchTourney}
+                  pendingTeams={pendingTeams}
+                  pendingSponsorships={pendingSponsorships}
+                  pendingScorers={pendingScorers}
+                  handleApproveTeam={handleApproveTeam}
+                  handleApproveSponsorship={handleApproveSponsorship}
+                  handleApproveScorer={handleApproveScorer}
+                  handleDeleteTeam={handleDeleteTeam}
+                  handleDeleteSponsorship={handleDeleteSponsorship}
+                  handleDeleteScorer={handleDeleteScorer}
+                  matches={matches}
+                  onSelectMatch={setSelectedMatchAnalysis}
+                />
+              )}
+
+              {user.role === 'player' && dashboardData && (
+                <PlayerView
+                  activeTab={activeTab}
+                  dashboardData={dashboardData}
+                  tournaments={tournaments}
+                  selectedTournament={selectedTournament}
+                  setSelectedTournament={setSelectedTournament}
+                  newTeam={newTeam}
+                  setNewTeam={setNewTeam}
+                  usersList={usersList}
+                  handleRegisterTeam={handleRegisterTeam}
+                  currentUser={user}
+                />
+              )}
+
+              {user.role === 'coach' && dashboardData && (
+                <CoachView
+                  activeTab={activeTab}
+                  dashboardData={dashboardData}
+                />
+              )}
+
+              {user.role === 'sponsor' && dashboardData && (
+                <SponsorView
+                  activeTab={activeTab}
+                  dashboardData={dashboardData}
+                  tournaments={tournaments}
+                  sponsorAmount={sponsorAmount}
+                  setSponsorAmount={setSponsorAmount}
+                  handleSponsorTournament={handleSponsorTournament}
+                />
+              )}
+
+              {user.role === 'scorer' && dashboardData && (
+                <ScorerView
+                  activeTab={activeTab}
+                  dashboardData={dashboardData}
+                  activeScoringMatch={activeScoringMatch}
+                  setActiveScoringMatch={setActiveScoringMatch}
+                  scoringForm={scoringForm}
+                  setScoringForm={setScoringForm}
+                  handleUpdateLiveScore={handleUpdateLiveScore}
+                  openCompletionModal={openCompletionModal}
+                  matches={matches}
+                  handleStartScoring={handleStartScoring}
+                />
+              )}
+            </div>
+          )}
+        </main>
+
+        {/* Collapsible Corner Floating Widget for LiveMatches */}
+        {token && user && (
+          <LiveMatches matches={matches} onSelectMatch={setSelectedMatchAnalysis} />
+        )}
+      </div>
 
       {/* Declare Match Ended Modal */}
       {completeMatchModal && (
@@ -1094,6 +1149,7 @@ function App() {
       {selectedMatchAnalysis && (
         <MatchDetailsModal
           match={selectedMatchAnalysis}
+          usersList={usersList}
           onClose={() => setSelectedMatchAnalysis(null)}
         />
       )}

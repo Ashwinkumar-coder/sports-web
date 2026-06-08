@@ -6,7 +6,7 @@ function seededRandom(seed) {
   return x - Math.floor(x);
 }
 
-export default function MatchDetailsModal({ match, onClose }) {
+export default function MatchDetailsModal({ match, usersList = [], onClose }) {
   const [activeSubTab, setActiveSubTab] = useState('summary');
   const [activeInningsTab, setActiveInningsTab] = useState(0); // 0: Innings 1 (Team A), 1: Innings 2 (Team B)
   const [statsTab, setStatsTab] = useState('wagon_wheel'); // wagon_wheel, over_comparison, run_comparison
@@ -17,6 +17,9 @@ export default function MatchDetailsModal({ match, onClose }) {
   const teamA = match.team_a;
   const teamB = match.team_b;
   const matchId = match.id;
+
+  // Resolve assigned scorer client-side if null
+  const scorerUser = match.scorer || (usersList && usersList.find(u => u.id === match.scorer_id));
 
   // Generate deterministic over by over data
   const oversA = Math.max(1, Math.ceil(match.team_a_overs || 1));
@@ -67,39 +70,42 @@ export default function MatchDetailsModal({ match, onClose }) {
     for (let i = 0; i < totalPoints; i++) {
       const seed = matchId * 300 + seedOffset + i;
       const r1 = seededRandom(seed);
-      const r2 = seededRandom(seed + 15);
       
-      const angle = r1 * 2 * Math.PI;
-      // Coordinates inside a 300x300 canvas
-      const maxRadius = 130;
-      const minRadius = 15;
-      const radius = minRadius + r2 * (maxRadius - minRadius);
+      const angle = Math.round(r1 * 360);
       
-      const x = 150 + Math.cos(angle) * radius;
-      const y = 150 + Math.sin(angle) * radius;
+      let type = 'single'; // single, four, six, wicket, dot
+      let shotRuns = 1;
       
-      let type = 'single'; // single, four, six, wicket
       if (r1 < 0.1 && wicketsPlaced < wickets) {
         type = 'wicket';
+        shotRuns = 0;
         wicketsPlaced++;
-      } else if (r1 > 0.85) {
+      } else if (r1 > 0.88) {
         type = 'six';
-      } else if (r1 > 0.65) {
+        shotRuns = 6;
+      } else if (r1 > 0.68) {
         type = 'four';
+        shotRuns = 4;
+      } else if (r1 < 0.3) {
+        type = 'dot';
+        shotRuns = 0;
+      } else if (r1 < 0.5) {
+        type = 'single';
+        shotRuns = 1;
+      } else {
+        type = 'double';
+        shotRuns = 2;
       }
       
-      list.push({ x, y, type });
+      list.push({ angle, runs: shotRuns, type });
     }
     
     // Fill remaining wickets if any
     while (wicketsPlaced < wickets) {
       const seed = matchId * 400 + wicketsPlaced;
       const r = seededRandom(seed);
-      const angle = r * 2 * Math.PI;
-      const radius = 30 + r * 80;
-      const x = 150 + Math.cos(angle) * radius;
-      const y = 150 + Math.sin(angle) * radius;
-      list.push({ x, y, type: 'wicket' });
+      const angle = Math.round(r * 360);
+      list.push({ angle, runs: 0, type: 'wicket' });
       wicketsPlaced++;
     }
     
@@ -114,7 +120,7 @@ export default function MatchDetailsModal({ match, onClose }) {
     if (wagonFilter === 'all') return true;
     if (wagonFilter === 'boundaries') return p.type === 'four' || p.type === 'six';
     if (wagonFilter === 'wickets') return p.type === 'wicket';
-    if (wagonFilter === 'singles') return p.type === 'single';
+    if (wagonFilter === 'singles') return p.type === 'single' || p.type === 'double';
     return true;
   });
 
@@ -122,6 +128,9 @@ export default function MatchDetailsModal({ match, onClose }) {
   const generateScorecard = (seedOffset, teamName, teamPlayers, runs, wickets, totalOvers, opponentPlayers) => {
     const batting = [];
     const bowling = [];
+    const yetToBat = [];
+    const fow = [];
+    const partnerships = [];
 
     // Default player templates if squad is empty
     const defaultNames = ["Rohit Sharma", "Shubman Gill", "Virat Kohli", "Shreyas Iyer", "KL Rahul", "Hardik Pandya", "Ravindra Jadeja", "Jasprit Bumrah", "Kuldeep Yadav", "Mohammed Siraj", "Mohammed Shami"];
@@ -211,7 +220,33 @@ export default function MatchDetailsModal({ match, onClose }) {
           sixes,
           status: statusText
         });
+      } else {
+        yetToBat.push(pName);
       }
+    }
+
+    // Fall of Wickets (FOW)
+    let currentScore = 0;
+    for (let i = 0; i < wicketsFallen; i++) {
+      const batter = batting[i]?.name || squad[i];
+      const overNum = ((i + 1) * (totalOvers / (wicketsFallen + 1))).toFixed(1);
+      currentScore += Math.round((runs - totalExtras) / (wicketsFallen + 1));
+      fow.push({
+        batter,
+        score: `${currentScore}/${i + 1}`,
+        over: overNum
+      });
+    }
+
+    // Partnerships
+    for (let i = 0; i <= wicketsFallen; i++) {
+      const pRuns = Math.round((runs - totalExtras) / (wicketsFallen + 1));
+      const pBalls = Math.round(validBalls / (wicketsFallen + 1));
+      partnerships.push({
+        wicket: i === wicketsFallen ? 'Unbroken' : i + 1,
+        runs: pRuns,
+        balls: pBalls
+      });
     }
 
     // Bowling (the opponent team's players bowl)
@@ -261,7 +296,9 @@ export default function MatchDetailsModal({ match, onClose }) {
         overs: bOvers,
         maidens: bMaidens,
         runs: bConceded,
-        wickets: bWickets
+        wickets: bWickets,
+        nb: Math.round(r * nb / bowlersCount),
+        wd: Math.round(r * wd / bowlersCount)
       });
     }
 
@@ -269,7 +306,10 @@ export default function MatchDetailsModal({ match, onClose }) {
       batting,
       bowling,
       extras: totalExtras,
-      extrasDetail: `(wd ${wd}, nb ${nb}, lb ${lb}, b ${bExtra})`
+      extrasDetail: `(wd ${wd}, nb ${nb}, lb ${lb}, b ${bExtra})`,
+      yetToBat,
+      fow,
+      partnerships
     };
   };
 
@@ -444,143 +484,193 @@ export default function MatchDetailsModal({ match, onClose }) {
             return (
               <div className="space-y-6">
                 {/* Premium Innings Selector Tabs */}
-                <div className="flex gap-2 w-full">
+                <div className="flex gap-2 w-full bg-[var(--bg-input)] p-1 rounded-xl border border-[var(--border-default)]">
                   <button
                     onClick={() => setActiveInningsTab(0)}
-                    className={`flex-1 py-3 rounded-xl border text-center transition cursor-pointer ${
+                    className={`flex-1 py-2 rounded-lg text-center transition cursor-pointer text-[10px] font-black uppercase tracking-wider ${
                       activeInningsTab === 0 
-                        ? 'bg-[var(--accent-glow)] border-[var(--accent)] text-[var(--accent)] font-bold shadow-sm' 
-                        : 'bg-[var(--bg-card)] border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                        ? 'bg-[var(--accent)] text-[var(--text-inverse)] font-bold' 
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
-                    <div className="text-xs uppercase tracking-wider font-extrabold">{teamA.name}</div>
-                    <div className="text-[8px] opacity-60 uppercase font-mono tracking-widest mt-0.5">1st Innings</div>
+                    1st Innings - {teamA.name}
                   </button>
                   <button
                     onClick={() => setActiveInningsTab(1)}
-                    className={`flex-1 py-3 rounded-xl border text-center transition cursor-pointer ${
+                    className={`flex-1 py-2 rounded-lg text-center transition cursor-pointer text-[10px] font-black uppercase tracking-wider ${
                       activeInningsTab === 1 
-                        ? 'bg-[var(--accent-glow)] border-[var(--accent)] text-[var(--accent)] font-bold shadow-sm' 
-                        : 'bg-[var(--bg-card)] border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-card-hover)]'
+                        ? 'bg-[var(--accent)] text-[var(--text-inverse)] font-bold' 
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
-                    <div className="text-xs uppercase tracking-wider font-extrabold">{teamB.name}</div>
-                    <div className="text-[8px] opacity-60 uppercase font-mono tracking-widest mt-0.5">2nd Innings</div>
+                    2nd Innings - {teamB.name}
                   </button>
                 </div>
 
-                {/* Glassmorphic Total Score HUD */}
-                <div className="bg-[var(--bg-card)] p-4 rounded-xl border border-[var(--border-default)] flex flex-col justify-between sm:flex-row sm:items-center gap-3">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-[var(--text-primary)] font-mono tracking-tighter">
-                      {currentInningsRuns}
-                      <span className="text-[var(--text-secondary)] text-base font-normal">/{currentInningsWickets}</span>
-                    </span>
-                    <span className="text-[var(--text-muted)] font-bold uppercase tracking-wider text-[10px] font-mono">
-                      {currentInningsOvers} OVERS
+                {/* Innings Header Banner */}
+                <div className="bg-slate-900 border border-slate-800 py-3 px-4 rounded-xl flex justify-between items-center">
+                  <span className="text-white font-black text-xs uppercase tracking-wider italic">
+                    🏏 {currentInningsTeam.name} Batting
+                  </span>
+                  <span className="text-slate-400 font-extrabold text-[10px] uppercase font-mono tracking-wider">
+                    {currentInningsRuns}/{currentInningsWickets} in {currentInningsOvers} ov
+                  </span>
+                </div>
+
+                {/* Batting Scorecard */}
+                <div className="bg-slate-900/40 rounded-xl border border-slate-800/80 overflow-hidden">
+                  <div className="flex py-2.5 bg-slate-900 px-3 items-center border-b border-slate-800 text-[10px] font-black tracking-widest text-slate-400 font-mono">
+                    <div className="flex-1">BATTER</div>
+                    <div className="w-12 text-center">R</div>
+                    <div className="w-12 text-center">B</div>
+                    <div className="w-12 text-center">4s</div>
+                    <div className="w-12 text-center">6s</div>
+                    <div className="w-16 text-right">SR</div>
+                  </div>
+
+                  <div className="divide-y divide-slate-800/50">
+                    {currentInningsData.batting.map((bat, i) => (
+                      <div key={i} className="flex py-3.5 px-3 items-center hover:bg-slate-900/60 transition duration-150">
+                        <div className="flex-1">
+                          <div className="text-[var(--text-primary)] font-extrabold text-xs">{bat.name}</div>
+                          {bat.status && (
+                            <div className={`text-[9px] font-bold mt-0.5 ${
+                              bat.status.toLowerCase() === 'batting' || bat.status.toLowerCase() === 'not out' 
+                                ? 'text-emerald-400' 
+                                : 'text-slate-500'
+                            }`}>
+                              {bat.status}
+                            </div>
+                          )}
+                        </div>
+                        <div className="w-12 text-center text-[var(--text-primary)] font-black text-xs font-mono">{bat.runs}</div>
+                        <div className="w-12 text-center text-slate-400 text-xs font-mono">{bat.balls}</div>
+                        <div className="w-12 text-center text-slate-400 text-xs font-mono">{bat.fours}</div>
+                        <div className="w-12 text-center text-slate-400 text-xs font-mono">{bat.sixes}</div>
+                        <div className="w-16 text-right text-emerald-400 font-extrabold text-xs font-mono">
+                          {bat.balls > 0 ? ((bat.runs / bat.balls) * 100).toFixed(2) : '0.00'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* EXTRAS ROW */}
+                  <div className="flex justify-between items-center py-3 px-3 border-t border-slate-800/60 bg-slate-900/30 text-xs">
+                    <span className="text-slate-400 font-bold">Extras</span>
+                    <span className="text-[var(--text-primary)] font-black font-mono">
+                      {currentInningsData.extras}{' '}
+                      <span className="text-slate-500 font-normal text-[10px]">{currentInningsData.extrasDetail}</span>
                     </span>
                   </div>
-                  <div className="flex items-center gap-4 text-[10px] font-bold font-mono">
-                    <span className="text-[var(--accent)] uppercase tracking-wider">CRR: {displayCRR}</span>
-                    <span className="text-[var(--text-secondary)] uppercase tracking-wider border-l border-[var(--border-default)] pl-4">
-                      {activeInningsTab === 0 ? 'First Innings Scorecard' : 'Second Innings Scorecard'}
+
+                  {/* TOTAL RUNS SUMMARY */}
+                  <div className="flex justify-between items-center py-3 px-3 bg-emerald-950/20 border-t border-emerald-500/10 text-xs">
+                    <span className="text-white font-extrabold uppercase tracking-wide">Total Innings Score</span>
+                    <span className="text-emerald-400 font-black text-sm italic font-mono">
+                      {currentInningsRuns}/{currentInningsWickets}{' '}
+                      <span className="text-slate-500 font-normal text-[10px] uppercase not-italic">in {currentInningsOvers} ov</span>
                     </span>
+                  </div>
+
+                  {/* YET TO BAT */}
+                  {currentInningsData.yetToBat && currentInningsData.yetToBat.length > 0 && (
+                    <div className="py-3 px-3 bg-slate-900/60 border-t border-slate-800">
+                      <div className="text-slate-400 font-black text-[9px] uppercase tracking-widest mb-1.5 font-mono">Yet to Bat</div>
+                      <div className="text-slate-500 text-xs font-semibold leading-5">
+                        {currentInningsData.yetToBat.join(', ')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Bowling Scorecard */}
+                <div className="bg-slate-900 border border-slate-800 py-3 px-4 rounded-xl">
+                  <span className="text-white font-black text-xs uppercase tracking-wider italic">
+                    🎯 {activeInningsTab === 0 ? teamB.name : teamA.name} Bowling
+                  </span>
+                </div>
+
+                <div className="bg-slate-900/40 rounded-xl border border-slate-800/80 overflow-hidden">
+                  <div className="flex py-2.5 bg-slate-900 px-3 items-center border-b border-slate-800 text-[10px] font-black tracking-widest text-slate-400 font-mono">
+                    <div className="flex-1">BOWLER</div>
+                    <div className="w-10 text-center">O</div>
+                    <div className="w-10 text-center">M</div>
+                    <div className="w-10 text-center">R</div>
+                    <div className="w-10 text-center">W</div>
+                    <div className="w-10 text-center">NB</div>
+                    <div className="w-10 text-center">WD</div>
+                    <div className="w-16 text-right">ECO</div>
+                  </div>
+
+                  <div className="divide-y divide-slate-800/50">
+                    {currentInningsData.bowling.map((bowl, i) => (
+                      <div key={i} className="flex py-3.5 px-3 items-center hover:bg-slate-900/60 transition duration-150 font-mono text-xs text-slate-400">
+                        <div className="flex-1 font-sans font-extrabold text-[var(--text-primary)]">{bowl.name}</div>
+                        <div className="w-10 text-center text-[var(--text-primary)]">{bowl.overs.toFixed(1)}</div>
+                        <div className="w-10 text-center">{bowl.maidens}</div>
+                        <div className="w-10 text-center">{bowl.runs}</div>
+                        <div className="w-10 text-center text-red-400 font-black">{bowl.wickets}</div>
+                        <div className="w-10 text-center">{bowl.nb || 0}</div>
+                        <div className="w-10 text-center">{bowl.wd || 0}</div>
+                        <div className="w-16 text-right text-amber-400 font-extrabold">
+                          {bowl.overs > 0 ? (bowl.runs / bowl.overs).toFixed(2) : '0.00'}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Batting Stats Section */}
-                <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-4 rounded-xl space-y-3">
-                  <h4 className="text-[var(--accent)] font-black text-[10px] uppercase tracking-widest italic flex items-center gap-1.5">
-                    🏏 BATTING STATS
-                  </h4>
-                  <div className="overflow-hidden border border-[var(--border-default)] rounded-xl">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-[var(--border-default)] text-[var(--text-secondary)] font-bold uppercase tracking-wider text-[9px] bg-[var(--bg-navbar)] font-mono">
-                          <th className="py-2.5 px-3.5">Batter</th>
-                          <th className="py-2.5 px-3.5 text-right">R</th>
-                          <th className="py-2.5 px-3.5 text-right">B</th>
-                          <th className="py-2.5 px-3.5 text-right">4s</th>
-                          <th className="py-2.5 px-3.5 text-right">6s</th>
-                          <th className="py-2.5 px-3.5 text-right">SR</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--border-default)]">
-                        {currentInningsData.batting.map((p, i) => {
-                          const sr = p.balls > 0 ? ((p.runs / p.balls) * 100).toFixed(1) : '0.0';
-                          return (
-                            <tr key={i} className="hover:bg-[var(--bg-sidebar-hover)]">
-                              <td className="py-2.5 px-3.5">
-                                <div className="font-bold text-[var(--text-primary)]">{p.name}</div>
-                                <div className="text-[9px] text-[var(--text-muted)] italic mt-0.5">{p.status}</div>
-                              </td>
-                              <td className="py-2.5 px-3.5 text-right font-mono font-extrabold text-[var(--text-primary)]">{p.runs}</td>
-                              <td className="py-2.5 px-3.5 text-right font-mono text-[var(--text-secondary)]">{p.balls}</td>
-                              <td className="py-2.5 px-3.5 text-right font-mono text-[var(--text-secondary)]">{p.fours}</td>
-                              <td className="py-2.5 px-3.5 text-right font-mono text-[var(--text-secondary)]">{p.sixes}</td>
-                              <td className="py-2.5 px-3.5 text-right font-mono text-[var(--accent)] font-bold">{sr}</td>
-                            </tr>
-                          );
-                        })}
-                        {/* Extras Row */}
-                        <tr className="bg-[var(--bg-sidebar-hover)] font-mono">
-                          <td className="py-3 px-3.5 font-bold text-[var(--text-secondary)] uppercase text-[10px]">Extras</td>
-                          <td colSpan="5" className="py-3 px-3.5 text-right text-[var(--text-primary)] text-[10px]">
-                            <span className="font-bold">{currentInningsData.extras}</span>
-                            <span className="text-[var(--text-muted)] font-normal ml-1.5">{currentInningsData.extrasDetail}</span>
-                          </td>
-                        </tr>
-                        {/* Total Score Row */}
-                        <tr className="bg-[var(--bg-card)] font-mono border-t border-[var(--border-default)]">
-                          <td className="py-3.5 px-3.5 font-black text-[var(--text-primary)] uppercase text-[10px]">Total Score</td>
-                          <td colSpan="5" className="py-3.5 px-3.5 text-right text-[var(--accent)] font-black text-sm italic">
-                            {currentInningsRuns}/{currentInningsWickets}
-                            <span className="text-[var(--text-muted)] text-[10px] font-bold uppercase not-italic ml-1">
-                              ({currentInningsOvers} ov)
-                            </span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                {/* FALL OF WICKETS */}
+                {currentInningsData.fow && currentInningsData.fow.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="bg-slate-900 border border-slate-800 py-3 px-4 rounded-xl">
+                      <span className="text-white font-black text-xs uppercase tracking-wider italic">Fall of Wickets</span>
+                    </div>
+                    <div className="bg-slate-900/40 rounded-xl border border-slate-800/80 overflow-hidden">
+                      <div className="flex py-2.5 bg-slate-900 px-3 items-center border-b border-slate-800 text-[10px] font-black tracking-widest text-slate-400 font-mono">
+                        <div className="flex-1">BATTER</div>
+                        <div className="w-24 text-center">SCORE</div>
+                        <div className="w-20 text-right">OVER</div>
+                      </div>
+                      <div className="divide-y divide-slate-800/50">
+                        {currentInningsData.fow.map((f, i) => (
+                          <div key={i} className="flex py-3 px-3 items-center text-xs">
+                            <div className="flex-1 text-slate-300 font-bold">{f.batter}</div>
+                            <div className="w-24 text-center text-emerald-400 font-black font-mono">{f.score}</div>
+                            <div className="w-20 text-right text-slate-400 font-mono">{f.over}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Bowling Stats Section */}
-                <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-4 rounded-xl space-y-3">
-                  <h4 className="text-[var(--accent)] font-black text-[10px] uppercase tracking-widest italic flex items-center gap-1.5">
-                    🎯 BOWLING STATS
-                  </h4>
-                  <div className="overflow-hidden border border-[var(--border-default)] rounded-xl">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="border-b border-[var(--border-default)] text-[var(--text-secondary)] font-bold uppercase tracking-wider text-[9px] bg-[var(--bg-navbar)] font-mono">
-                          <th className="py-2.5 px-3.5">Bowler</th>
-                          <th className="py-2.5 px-3.5 text-right">O</th>
-                          <th className="py-2.5 px-3.5 text-right">M</th>
-                          <th className="py-2.5 px-3.5 text-right">R</th>
-                          <th className="py-2.5 px-3.5 text-right">W</th>
-                          <th className="py-2.5 px-3.5 text-right">ECO</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--border-default)] font-mono">
-                        {currentInningsData.bowling.map((bowl, i) => {
-                          const eco = bowl.overs > 0 ? (bowl.runs / bowl.overs).toFixed(2) : '0.00';
-                          return (
-                            <tr key={i} className="hover:bg-[var(--bg-sidebar-hover)]">
-                              <td className="py-2.5 px-3.5 font-bold text-[var(--text-primary)] font-sans">{bowl.name}</td>
-                              <td className="py-2.5 px-3.5 text-right text-[var(--text-primary)]">{bowl.overs.toFixed(1)}</td>
-                              <td className="py-2.5 px-3.5 text-right text-[var(--text-secondary)]">{bowl.maidens}</td>
-                              <td className="py-2.5 px-3.5 text-right text-[var(--text-secondary)]">{bowl.runs}</td>
-                              <td className="py-2.5 px-3.5 text-right font-extrabold text-[var(--text-primary)]">{bowl.wickets}</td>
-                              <td className="py-2.5 px-3.5 text-right text-[var(--accent)] font-bold">{eco}</td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                {/* PARTNERSHIPS */}
+                {currentInningsData.partnerships && currentInningsData.partnerships.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="bg-slate-950 border border-slate-800 py-3 px-4 rounded-xl">
+                      <span className="text-white font-black text-xs uppercase tracking-wider italic">Partnerships</span>
+                    </div>
+                    <div className="bg-slate-900/40 rounded-xl border border-slate-800/80 overflow-hidden">
+                      <div className="flex py-2.5 bg-slate-900 px-3 items-center border-b border-slate-800 text-[10px] font-black tracking-widest text-slate-400 font-mono">
+                        <div className="flex-1">WICKET</div>
+                        <div className="w-36 text-right">PARTNERSHIP (RUNS)</div>
+                      </div>
+                      <div className="divide-y divide-slate-800/50">
+                        {currentInningsData.partnerships.map((p, i) => (
+                          <div key={i} className="flex py-3 px-3 items-center text-xs justify-between">
+                            <div className="text-emerald-400 font-black text-[10px] uppercase font-mono">
+                              {p.wicket === 'Unbroken' ? 'Unbroken' : `${p.wicket}${p.wicket === 1 ? 'st' : p.wicket === 2 ? 'nd' : p.wicket === 3 ? 'rd' : 'th'} Wicket`}
+                            </div>
+                            <div className="w-36 text-right text-white font-black font-mono">
+                              {p.runs} <span className="text-slate-500 font-bold text-[9px]">({p.balls}b)</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-
+                )}
               </div>
             );
           })()}
@@ -590,40 +680,69 @@ export default function MatchDetailsModal({ match, onClose }) {
             <div className="space-y-6">
               <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-5 rounded-2xl flex flex-col md:flex-row gap-6 items-center justify-center">
                 {/* Visual Field SVG representation */}
-                <div className="relative w-[300px] h-[300px] bg-[var(--bg-page)] border border-[var(--border-default)] rounded-full flex items-center justify-center overflow-hidden">
-                  {/* Outer circle line */}
-                  <div className="absolute w-[280px] h-[280px] border border-dashed border-[var(--border-default)] rounded-full"></div>
-                  {/* 30 yard inner circle */}
-                  <div className="absolute w-[160px] h-[160px] border border-[var(--border-default)] rounded-full"></div>
-                  {/* Center pitch box */}
-                  <div className="absolute w-[16px] h-[40px] bg-[var(--bg-panel)] border border-[var(--border-default)] rounded-sm"></div>
+                <div className="relative w-[300px] h-[300px] bg-emerald-950/20 border border-emerald-500/25 rounded-full flex items-center justify-center overflow-hidden">
+                  <svg viewBox="0 0 300 300" className="w-[300px] h-[300px] absolute inset-0">
+                    {/* Outer boundaries rings */}
+                    <circle cx="150" cy="150" r="140" fill="none" stroke="rgba(16,185,129,0.2)" strokeWidth="1" strokeDasharray="3" />
+                    <circle cx="150" cy="150" r="135" fill="none" stroke="rgba(16,185,129,0.4)" strokeWidth="1.5" />
+                    {/* 30 yard circle */}
+                    <circle cx="150" cy="150" r="85" fill="none" stroke="rgba(16,185,129,0.3)" strokeWidth="1.5" />
+                    {/* Center Pitch */}
+                    <rect x="142" y="120" width="16" height="60" fill="rgba(6,78,59,0.8)" stroke="rgba(255,255,255,0.25)" strokeWidth="1" rx="2" />
+                    {/* Pitch Crease Lines */}
+                    <line x1="142" y1="128" x2="158" y2="128" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8" />
+                    <line x1="142" y1="172" x2="158" y2="172" stroke="rgba(255,255,255,0.4)" strokeWidth="0.8" />
 
-                  {/* Draw points */}
-                  {filteredWagonPoints.map((pt, index) => {
-                    let dotColor = '#888888'; // single: muted grey
-                    if (pt.type === 'four') dotColor = '#AA8C2C'; // four: dark gold
-                    if (pt.type === 'six') dotColor = '#D4AF37'; // six: bright gold
-                    if (pt.type === 'wicket') dotColor = '#F5F5F5'; // wicket: off-white
-                    
-                    return (
-                      <div
-                        key={index}
-                        style={{
-                          left: pt.x - 3,
-                          top: pt.y - 3,
-                          backgroundColor: dotColor,
-                        }}
-                        className={`absolute w-1.5 h-1.5 rounded-full border border-slate-950/70`}
-                        title={pt.type.toUpperCase()}
-                      ></div>
-                    );
-                  })}
+                    {/* Radiating lines starting from pitch center, color-coded for Boundaries, Singles, Dots, Wickets */}
+                    {filteredWagonPoints.map((shot, idx) => {
+                      const angleRad = (shot.angle * Math.PI) / 180;
+                      let shotLength = 25;
+                      if (shot.runs === 1) shotLength = 50;
+                      else if (shot.runs === 2) shotLength = 75;
+                      else if (shot.runs === 3) shotLength = 90;
+                      else if (shot.runs === 4) shotLength = 115;
+                      else if (shot.runs === 6) shotLength = 135;
+                      else if (shot.runs > 0) shotLength = 65;
+
+                      const x2 = 150 + shotLength * Math.cos(angleRad);
+                      const y2 = 150 + shotLength * Math.sin(angleRad);
+
+                      let shotColor = '#3b82f6'; // Blue for singles
+                      if (shot.runs >= 4) shotColor = '#10b981'; // Emerald for boundaries
+                      else if (shot.type === 'wicket') shotColor = '#ef4444'; // Red for wickets
+                      else if (shot.runs === 0) shotColor = '#fbbf24'; // Amber for dots
+
+                      const strokeWidth = shot.runs >= 4 ? 2 : shot.type === 'wicket' ? 1.5 : 1;
+                      const strokeDash = shot.runs === 0 && shot.type !== 'wicket' ? '2' : 'none';
+
+                      return (
+                        <line
+                          key={idx}
+                          x1="150"
+                          y1="150"
+                          x2={x2}
+                          y2={y2}
+                          stroke={shotColor}
+                          strokeWidth={strokeWidth}
+                          strokeDasharray={strokeDash}
+                          opacity={shot.runs >= 4 ? 0.95 : shot.type === 'wicket' ? 0.9 : 0.6}
+                        />
+                      );
+                    })}
+                  </svg>
+                  
+                  {/* Score Banner in Pitch Center */}
+                  <div className="absolute bottom-4 bg-blue-600/90 border border-blue-400/30 px-4 py-1.5 rounded-lg shadow-lg pointer-events-none">
+                    <span className="text-white font-extrabold text-[9px] uppercase tracking-wider italic">
+                      WAGON WHEEL ACTIVE
+                    </span>
+                  </div>
                 </div>
 
                 {/* Filters & Information panel */}
                 <div className="flex-1 space-y-4 max-w-sm w-full">
-                  <h4 className="font-bold text-[var(--text-primary)]">Interactive Shot Distribution</h4>
-                  <p className="text-[var(--text-secondary)] text-xs font-semibold">Simulated batting shot directions on field. Filter points below to inspect angles:</p>
+                  <h4 className="font-bold text-[var(--text-primary)]">Interactive Broadcast Wagon Wheel</h4>
+                  <p className="text-[var(--text-secondary)] text-xs font-semibold">Custom field-radiation lines showing shot directions. Filter to inspect categories:</p>
                   
                   {/* Filter selector */}
                   <div className="flex flex-wrap gap-2 pt-2">
@@ -643,22 +762,22 @@ export default function MatchDetailsModal({ match, onClose }) {
                   </div>
 
                   {/* Legend list */}
-                  <div className="space-y-2 border-t border-[var(--border-default)] pt-4 font-mono text-[10px]">
+                  <div className="grid grid-cols-2 gap-2 border-t border-[var(--border-default)] pt-4 font-mono text-[9px] uppercase font-bold">
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#888888]"></span>
-                      <span className="text-[var(--text-secondary)] font-semibold">Singles, Doubles & Triples</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>
+                      <span className="text-[var(--text-secondary)]">Boundaries (4s/6s)</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#AA8C2C]"></span>
-                      <span className="text-[var(--text-secondary)] font-semibold">Four Boundaries (4s)</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6]"></span>
+                      <span className="text-[var(--text-secondary)]">Singles & Runs</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#D4AF37]"></span>
-                      <span className="text-[var(--text-secondary)] font-semibold">Six Boundaries (6s)</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#fbbf24]"></span>
+                      <span className="text-[var(--text-secondary)]">Dots (Amber)</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#F5F5F5] border border-[var(--border-default)]"></span>
-                      <span className="text-[var(--text-secondary)] font-semibold">Wickets Felled</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#ef4444]"></span>
+                      <span className="text-[var(--text-secondary)]">Wickets (Red)</span>
                     </div>
                   </div>
                 </div>

@@ -141,6 +141,8 @@ html {
 body {
   background: var(--bg-page);
   color: var(--text-primary);
+  font-size: 0.875rem; /* 14px consistent base font size */
+  line-height: 1.5;
   min-height: 100vh;
   margin: 0;
   padding: 0;

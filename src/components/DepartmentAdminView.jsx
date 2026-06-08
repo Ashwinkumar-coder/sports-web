@@ -8,6 +8,7 @@ import {
 import { Card, CardHeader, CardTitle, CardContent } from './ui/Card';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
+import StaticCharts from './StaticCharts';
 
 // Framer Motion variants
 const containerVariants = {
@@ -79,22 +80,41 @@ export default function DepartmentAdminView({
               </div>
             </div>
 
-            {/* Quick Summary Guidelines */}
+            {/* Platform Operations Summary */}
             <Card>
-              <CardHeader className="mb-2">
+              <CardHeader className="mb-4">
                 <CardTitle className="text-sm font-extrabold uppercase tracking-wider text-[var(--text-primary)]">
-                  Department Administration Tasks
+                  🏛️ Platform Operations Summary
                 </CardTitle>
               </CardHeader>
-              <p className="text-[var(--text-secondary)] text-xs leading-relaxed mt-1">
-                As a Department Admin, you are responsible for governing the local cricket structure:
-              </p>
-              <ul className="list-disc list-inside text-xs text-[var(--text-secondary)] space-y-2 pl-2 mt-3 font-semibold">
-                <li>Review and approve new Player, Coach, Scorer, and Sponsor accounts.</li>
-                <li>Establish Federations and delegate regional administration roles.</li>
-                <li>Assess and approve newly proposed cricket tournaments by Federation Admins.</li>
-              </ul>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mt-2">
+                <div className="bg-[var(--bg-input)] border border-[var(--border-default)] p-4 rounded-xl">
+                  <div className="text-[var(--text-muted)] text-[9px] font-black uppercase tracking-widest">Active Federations</div>
+                  <div className="text-xl font-bold text-[var(--text-primary)] mt-1.5">{federations.length}</div>
+                </div>
+                <div className="bg-[var(--bg-input)] border border-[var(--border-default)] p-4 rounded-xl">
+                  <div className="text-[var(--text-muted)] text-[9px] font-black uppercase tracking-widest">Supervised Tourneys</div>
+                  <div className="text-xl font-bold text-[var(--text-primary)] mt-1.5">{tournaments.length}</div>
+                </div>
+                <div className="bg-[var(--bg-input)] border border-[var(--border-default)] p-4 rounded-xl">
+                  <div className="text-[var(--text-muted)] text-[9px] font-black uppercase tracking-widest">Registered Coaches</div>
+                  <div className="text-xl font-bold text-[var(--text-primary)] mt-1.5">
+                    {usersList.filter(u => u.role === 'coach').length}
+                  </div>
+                </div>
+                <div className="bg-[var(--bg-input)] border border-[var(--border-default)] p-4 rounded-xl">
+                  <div className="text-[var(--text-muted)] text-[9px] font-black uppercase tracking-widest">Official Scorers</div>
+                  <div className="text-xl font-bold text-[var(--text-primary)] mt-1.5">
+                    {usersList.filter(u => u.role === 'scorer').length}
+                  </div>
+                </div>
+              </div>
             </Card>
+
+
+
+            {/* Static Analytics Charts */}
+            <StaticCharts />
           </div>
         )}
 
@@ -212,14 +232,24 @@ export default function DepartmentAdminView({
                       <span className="block text-[10px] text-[var(--text-secondary)] uppercase font-mono mt-0.5">{u.role}</span>
                       <span className="block text-[10px] text-[var(--text-secondary)] font-mono">{u.email}</span>
                     </div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleApproveUser(u.id)}
-                      icon={Check}
-                    >
-                      Approve
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleApproveUser(u.id)}
+                        icon={Check}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDeleteUser(u.id)}
+                        icon={Trash2}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -243,14 +273,24 @@ export default function DepartmentAdminView({
                       <span className="block text-[10px] text-[var(--text-secondary)] mt-0.5 font-mono">Federation ID: {t.federation_id}</span>
                       <span className="block text-[10px] text-[var(--text-secondary)] font-mono">Fee: ${t.fee} | Entries: {t.number_of_entry}</span>
                     </div>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleApproveTournament(t.id)}
-                      icon={Check}
-                    >
-                      Approve
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleApproveTournament(t.id)}
+                        icon={Check}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleDeleteTournament(t.id)}
+                        icon={Trash2}
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
