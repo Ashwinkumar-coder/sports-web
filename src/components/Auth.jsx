@@ -21,11 +21,8 @@ export default function Auth({
     return (
       <Card className="max-w-md mx-auto space-y-6">
         <div className="text-center space-y-3">
-          <Badge variant="primary" glow className="py-1 px-3.5 uppercase tracking-wider font-mono">
-            🛡️ Super Admin Control
-          </Badge>
+        
           <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Super Admin Sign In</h1>
-          <p className="text-[var(--text-secondary)] text-xs">Access platform bootstrapping, departments creation, and central platform controls.</p>
         </div>
 
         <form onSubmit={(e) => handleLogin(e, 'admin')} autoComplete="off" className="space-y-4 text-xs">
