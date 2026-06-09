@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Award, MapPin, TrendingUp, Activity, BarChart2, MessageSquare, CheckCircle, Sliders, RotateCw, RefreshCw, Users, Compass } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from './ui/Card';
-import TamilNaduMap from './TamilNaduMap';
+import TamilNaduMap from './TamilNaduGeoMap';
 
 export default function StaticCharts() {
   // Exploded Pie Chart States
@@ -35,88 +35,88 @@ export default function StaticCharts() {
   //   L 6,134 Z
   const districts38 = [
     // ── NORTH BORDER STRIP ──────────────────────────────────────────────────
-    { name: 'Krishnagiri',   registrations: 2310, color: '#1d4ed8', percentage: 5,
+    { name: 'Krishnagiri',   registrations: 2310, color: '#ef4444', percentage: 5,
       path: 'M 59,74 L 114,46 L 144,14 L 162,14 L 162,92 L 60,92 Z' },
-    { name: 'Tirupattur',    registrations: 1540, color: '#b45309', percentage: 3,
+    { name: 'Tirupattur',    registrations: 1540, color: '#f97316', percentage: 3,
       path: 'M 144,14 L 173,18 L 200,10 L 200,92 L 162,92 L 162,14 Z' },
-    { name: 'Vellore',       registrations: 2710, color: '#ea580c', percentage: 6,
+    { name: 'Vellore',       registrations: 2710, color: '#f59e0b', percentage: 6,
       path: 'M 173,18 L 221,0 L 244,0 L 244,92 L 200,92 L 200,10 Z' },
-    { name: 'Ranipet',       registrations: 1850, color: '#f97316', percentage: 4,
+    { name: 'Ranipet',       registrations: 1850, color: '#eab308', percentage: 4,
       path: 'M 221,0 L 258,6 L 250,70 L 244,70 L 244,0 Z' },
-    { name: 'Tiruvallur',    registrations: 3450, color: '#e67300', percentage: 8,
+    { name: 'Tiruvallur',    registrations: 3450, color: '#84cc16', percentage: 8,
       path: 'M 244,70 L 250,70 L 258,6 L 269,7 L 288,38 L 285,92 L 256,92 L 244,92 Z' },
-    { name: 'Chennai',       registrations: 8420, color: '#f55207', percentage: 19,
+    { name: 'Chennai',       registrations: 8420, color: '#22c55e', percentage: 19,
       path: 'M 285,92 L 288,38 L 301,32 L 306,50 L 295,82 L 280,92 Z' },
     // ── NORTH-WEST STRIP ────────────────────────────────────────────────────
-    { name: 'Nilgiris',      registrations: 1250, color: '#7c3aed', percentage: 2,
+    { name: 'Nilgiris',      registrations: 1250, color: '#10b981', percentage: 2,
       path: 'M 6,113 L 7,102 L 59,74 L 62,92 L 62,162 L 2,162 L 6,134 Z' },
     // ── SECOND ROW INTERIOR ─────────────────────────────────────────────────
-    { name: 'Dharmapuri',    registrations: 1890, color: '#2563eb', percentage: 4,
+    { name: 'Dharmapuri',    registrations: 1890, color: '#14b8a6', percentage: 4,
       path: 'M 62,92 L 162,92 L 162,138 L 100,138 L 62,130 Z' },
-    { name: 'Salem',         registrations: 3210, color: '#3b82f6', percentage: 7,
+    { name: 'Salem',         registrations: 3210, color: '#06b6d4', percentage: 7,
       path: 'M 100,138 L 162,138 L 200,92 L 210,138 L 200,175 L 160,175 L 100,165 Z' },
-    { name: 'Tiruvannamalai',registrations: 2430, color: '#f59e0b', percentage: 5,
+    { name: 'Tiruvannamalai',registrations: 2430, color: '#0ea5e9', percentage: 5,
       path: 'M 200,92 L 244,92 L 256,92 L 260,138 L 245,175 L 210,175 L 210,138 Z' },
-    { name: 'Kanchipuram',   registrations: 2900, color: '#d95a00', percentage: 6,
+    { name: 'Kanchipuram',   registrations: 2900, color: '#3b82f6', percentage: 6,
       path: 'M 256,92 L 285,92 L 295,82 L 280,131 L 268,138 L 260,138 Z' },
-    { name: 'Chengalpattu',  registrations: 3120, color: '#c2410c', percentage: 7,
+    { name: 'Chengalpattu',  registrations: 3120, color: '#6366f1', percentage: 7,
       path: 'M 260,138 L 268,138 L 280,131 L 275,175 L 256,180 L 245,175 Z' },
     // ── THIRD ROW ───────────────────────────────────────────────────────────
-    { name: 'Coimbatore',    registrations: 6150, color: '#1e3a8a', percentage: 14,
+    { name: 'Coimbatore',    registrations: 6150, color: '#8b5cf6', percentage: 14,
       path: 'M 2,162 L 62,162 L 90,162 L 90,215 L 2,215 L 1,180 Z' },
-    { name: 'Erode',         registrations: 2540, color: '#4f46e5', percentage: 5,
+    { name: 'Erode',         registrations: 2540, color: '#a855f7', percentage: 5,
       path: 'M 62,130 L 100,138 L 100,165 L 118,175 L 118,205 L 90,205 L 90,162 L 62,162 Z' },
-    { name: 'Namakkal',      registrations: 2150, color: '#60a5fa', percentage: 5,
+    { name: 'Namakkal',      registrations: 2150, color: '#d946ef', percentage: 5,
       path: 'M 100,165 L 160,175 L 158,210 L 118,205 L 118,175 Z' },
-    { name: 'Karur',         registrations: 1720, color: '#854d0e', percentage: 4,
+    { name: 'Karur',         registrations: 1720, color: '#ec4899', percentage: 4,
       path: 'M 118,205 L 158,210 L 158,245 L 118,245 Z' },
-    { name: 'Tiruchirappalli',registrations:3950, color: '#eab308', percentage: 9,
+    { name: 'Tiruchirappalli',registrations:3950, color: '#f43f5e', percentage: 9,
       path: 'M 158,175 L 200,175 L 215,200 L 205,245 L 158,245 L 158,210 Z' },
-    { name: 'Perambalur',    registrations: 1120, color: '#ca8a04', percentage: 2,
+    { name: 'Perambalur',    registrations: 1120, color: '#4ade80', percentage: 2,
       path: 'M 200,175 L 245,175 L 245,205 L 220,210 L 215,200 Z' },
-    { name: 'Ariyalur',      registrations: 1340, color: '#a16207', percentage: 3,
+    { name: 'Ariyalur',      registrations: 1340, color: '#2dd4bf', percentage: 3,
       path: 'M 215,200 L 220,210 L 245,205 L 255,228 L 225,235 L 205,225 Z' },
-    { name: 'Kallakurichi',  registrations: 1980, color: '#059669', percentage: 4,
+    { name: 'Kallakurichi',  registrations: 1980, color: '#38bdf8', percentage: 4,
       path: 'M 245,175 L 256,180 L 262,205 L 245,205 Z' },
-    { name: 'Villupuram',    registrations: 2890, color: '#10b981', percentage: 6,
+    { name: 'Villupuram',    registrations: 2890, color: '#ef4444', percentage: 6,
       path: 'M 256,180 L 275,175 L 275,202 L 269,202 L 262,205 Z' },
-    { name: 'Cuddalore',     registrations: 2650, color: '#047857', percentage: 6,
+    { name: 'Cuddalore',     registrations: 2650, color: '#f97316', percentage: 6,
       path: 'M 262,205 L 269,202 L 280,223 L 270,230 L 255,228 L 245,205 Z' },
     // ── FOURTH ROW ──────────────────────────────────────────────────────────
-    { name: 'Tiruppur',      registrations: 2780, color: '#6366f1', percentage: 6,
+    { name: 'Tiruppur',      registrations: 2780, color: '#f59e0b', percentage: 6,
       path: 'M 90,205 L 118,205 L 118,245 L 90,245 L 90,215 Z' },
-    { name: 'Dindigul',      registrations: 2300, color: '#7c3aed', percentage: 5,
+    { name: 'Dindigul',      registrations: 2300, color: '#eab308', percentage: 5,
       path: 'M 90,245 L 118,245 L 158,245 L 158,285 L 118,285 L 90,268 Z' },
-    { name: 'Theni',         registrations: 1670, color: '#ec4899', percentage: 3,
+    { name: 'Theni',         registrations: 1670, color: '#84cc16', percentage: 3,
       path: 'M 38,290 L 90,268 L 90,245 L 90,215 L 55,225 L 38,260 Z' },
-    { name: 'Thanjavur',     registrations: 2450, color: '#d97706', percentage: 5,
+    { name: 'Thanjavur',     registrations: 2450, color: '#22c55e', percentage: 5,
       path: 'M 205,225 L 225,235 L 230,262 L 195,268 L 190,248 Z' },
-    { name: 'Mayiladuthurai',registrations: 1590, color: '#b45309', percentage: 3,
+    { name: 'Mayiladuthurai',registrations: 1590, color: '#10b981', percentage: 3,
       path: 'M 225,235 L 255,228 L 258,255 L 235,262 L 230,262 Z' },
-    { name: 'Tiruvarur',     registrations: 1680, color: '#f59e0b', percentage: 4,
+    { name: 'Tiruvarur',     registrations: 1680, color: '#14b8a6', percentage: 4,
       path: 'M 235,262 L 258,255 L 265,262 L 248,275 L 235,272 Z' },
-    { name: 'Nagapattinam',  registrations: 1450, color: '#ca8a04', percentage: 3,
+    { name: 'Nagapattinam',  registrations: 1450, color: '#06b6d4', percentage: 3,
       path: 'M 248,275 L 265,262 L 270,275 L 256,290 L 248,285 Z' },
-    { name: 'Pudukkottai',   registrations: 2210, color: '#a16207', percentage: 5,
+    { name: 'Pudukkottai',   registrations: 2210, color: '#0ea5e9', percentage: 5,
       path: 'M 158,245 L 205,245 L 190,248 L 195,268 L 175,285 L 158,285 Z' },
     // ── FIFTH ROW ───────────────────────────────────────────────────────────
-    { name: 'Madurai',       registrations: 4890, color: '#dc2626', percentage: 11,
+    { name: 'Madurai',       registrations: 4890, color: '#3b82f6', percentage: 11,
       path: 'M 90,268 L 158,285 L 155,315 L 115,318 L 90,300 L 90,268 Z' },
-    { name: 'Sivagangai',    registrations: 2010, color: '#f43f5e', percentage: 4,
+    { name: 'Sivagangai',    registrations: 2010, color: '#6366f1', percentage: 4,
       path: 'M 158,285 L 175,285 L 195,268 L 218,285 L 218,308 L 192,322 L 160,322 L 155,315 Z' },
-    { name: 'Ramanathapuram',registrations: 1950, color: '#ef4444', percentage: 4,
+    { name: 'Ramanathapuram',registrations: 1950, color: '#8b5cf6', percentage: 4,
       path: 'M 218,285 L 243,294 L 256,290 L 248,285 L 248,318 L 192,322 L 218,308 Z' },
     // ── SIXTH ROW ───────────────────────────────────────────────────────────
-    { name: 'Tenkasi',       registrations: 1780, color: '#db2777', percentage: 4,
+    { name: 'Tenkasi',       registrations: 1780, color: '#a855f7', percentage: 4,
       path: 'M 38,290 L 55,290 L 78,310 L 78,345 L 55,340 Z' },
-    { name: 'Virudhunagar',  registrations: 2240, color: '#f472b6', percentage: 5,
+    { name: 'Virudhunagar',  registrations: 2240, color: '#d946ef', percentage: 5,
       path: 'M 78,310 L 115,318 L 155,315 L 160,322 L 148,354 L 110,348 L 78,345 Z' },
-    { name: 'Thoothukudi',   registrations: 1950, color: '#f43f5e', percentage: 4,
+    { name: 'Thoothukudi',   registrations: 1950, color: '#ec4899', percentage: 4,
       path: 'M 160,322 L 192,322 L 192,322 L 148,354 L 160,322 Z' },
     // ── SOUTH TIP ───────────────────────────────────────────────────────────
-    { name: 'Tirunelveli',   registrations: 2800, color: '#be123c', percentage: 6,
+    { name: 'Tirunelveli',   registrations: 2800, color: '#f43f5e', percentage: 6,
       path: 'M 78,345 L 110,348 L 122,372 L 103,386 L 78,372 L 74,368 Z' },
-    { name: 'Kanyakumari',   registrations: 2100, color: '#f472b6', percentage: 5,
+    { name: 'Kanyakumari',   registrations: 2100, color: '#4ade80', percentage: 5,
       path: 'M 78,372 L 103,386 L 74,386 L 74,368 Z' },
   ];
 
@@ -125,27 +125,27 @@ export default function StaticCharts() {
 
   // Sports registration distribution (Solid Exploded Pie data)
   const sportsRegistrationData = [
-    { sport: 'Cricket', count: '17,128 Players', percentage: 40, color: '#d6ff00' },
-    { sport: 'Kabaddi', count: '10,705 Players', percentage: 25, color: '#a855f7' },
-    { sport: 'Athletics', count: '6,423 Players', percentage: 15, color: '#06b6d4' },
-    { sport: 'Football', count: '5,138 Players', percentage: 12, color: '#f43f5e' },
-    { sport: 'Basketball', count: '3,426 Players', percentage: 8, color: '#ec4899' },
+    { sport: 'Cricket', count: '17,128 Players', percentage: 40, color: '#84cc16' },
+    { sport: 'Kabaddi', count: '10,705 Players', percentage: 25, color: '#22c55e' },
+    { sport: 'Athletics', count: '6,423 Players', percentage: 15, color: '#10b981' },
+    { sport: 'Football', count: '5,138 Players', percentage: 12, color: '#14b8a6' },
+    { sport: 'Basketball', count: '3,426 Players', percentage: 8, color: '#06b6d4' },
   ];
 
   // Gender Participation Statistics: Total 42,820
   const genderParticipationData = [
-    { gender: 'Male', count: '26.5k', percentage: 62, color: '#06b6d4' },
-    { gender: 'Female', count: '15.9k', percentage: 37, color: '#ec4899' },
-    { gender: 'Other', count: '350', percentage: 1, color: '#a855f7' },
+    { gender: 'Male', count: '26.5k', percentage: 62, color: '#0ea5e9' },
+    { gender: 'Female', count: '15.9k', percentage: 37, color: '#3b82f6' },
+    { gender: 'Other', count: '350', percentage: 1, color: '#6366f1' },
   ];
 
   // Age Category Distribution: Total 42,820
   const ageCategoryData = [
-    { ageGroup: 'Under-14', count: 6420, percentage: 15, color: '#d6ff00' },
-    { ageGroup: 'Under-17', count: 12840, percentage: 30, color: '#06b6d4' },
-    { ageGroup: 'Under-19', count: 10700, percentage: 25, color: '#a855f7' },
-    { ageGroup: 'Under-25', count: 8560, percentage: 20, color: '#f43f5e' },
-    { ageGroup: 'Seniors', count: 4300, percentage: 10, color: '#ec4899' },
+    { ageGroup: 'Under-14', count: 6420, percentage: 15, color: '#8b5cf6' },
+    { ageGroup: 'Under-17', count: 12840, percentage: 30, color: '#a855f7' },
+    { ageGroup: 'Under-19', count: 10700, percentage: 25, color: '#d946ef' },
+    { ageGroup: 'Under-25', count: 8560, percentage: 20, color: '#ec4899' },
+    { ageGroup: 'Seniors', count: 4300, percentage: 10, color: '#f43f5e' },
   ];
 
   // Monthly Growth Data
@@ -160,11 +160,11 @@ export default function StaticCharts() {
 
   // Sports performance points index (Sport Index Performance data)
   const sportsPointsData = [
-    { sport: 'Cricket', score: 95, color: '#d6ff00' },
-    { sport: 'Athletics', score: 85, color: '#06b6d4' },
-    { sport: 'Kabaddi', score: 78, color: '#a855f7' },
-    { sport: 'Football', score: 72, color: '#f43f5e' },
-    { sport: 'Hockey', score: 65, color: '#3b82f6' },
+    { sport: 'Cricket', score: 95, color: '#ef4444' },
+    { sport: 'Athletics', score: 85, color: '#f97316' },
+    { sport: 'Kabaddi', score: 78, color: '#f59e0b' },
+    { sport: 'Football', score: 72, color: '#eab308' },
+    { sport: 'Hockey', score: 65, color: '#84cc16' },
   ];
 
   // Complaints Data: Raised vs Actioned (Full Datasets)
@@ -277,6 +277,7 @@ export default function StaticCharts() {
           <TamilNaduMap
             selectedMapDistrict={selectedMapDistrict}
             setSelectedMapDistrict={setSelectedMapDistrict}
+            districts38={districts38}
           />
 
           <div className="mt-4 grid grid-cols-2 gap-2 text-[10px] font-mono">
