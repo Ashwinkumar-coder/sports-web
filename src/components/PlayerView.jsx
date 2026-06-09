@@ -123,7 +123,7 @@ export default function PlayerView({
                   >
                     <div className="font-extrabold text-[var(--text-primary)] text-sm">{t.name}</div>
                     <div className="text-[10px] text-[var(--text-secondary)] mt-1.5">
-                      Entry Fee: <span className="font-bold text-[var(--accent)]">${t.fee}</span> | Team Size: <span className="font-bold text-[var(--accent)]">{t.maximum_player_count} players</span>
+                      Entry Fee: <span className="font-bold text-[var(--accent)]">₹{t.fee}</span> | Team Size: <span className="font-bold text-[var(--accent)]">{t.maximum_player_count} players</span>
                     </div>
                   </div>
                 ))}

@@ -11,6 +11,7 @@ export default function MatchDetailsModal({ match, usersList = [], onClose }) {
   const [activeInningsTab, setActiveInningsTab] = useState(0); // 0: Innings 1 (Team A), 1: Innings 2 (Team B)
   const [statsTab, setStatsTab] = useState('wagon_wheel'); // wagon_wheel, over_comparison, run_comparison
   const [wagonFilter, setWagonFilter] = useState('all'); // all, boundaries, wickets, singles
+  const [selectedPlayer, setSelectedPlayer] = useState('All');
 
   if (!match) return null;
 
@@ -112,17 +113,7 @@ export default function MatchDetailsModal({ match, usersList = [], onClose }) {
     return list;
   };
 
-  const teamAWagon = generateWagonWheel(50, match.team_a_runs, match.team_a_wickets);
-  const teamBWagon = generateWagonWheel(60, match.team_b_runs, match.team_b_wickets);
-  const allWagonPoints = [...teamAWagon.map(p => ({ ...p, team: 'A' })), ...teamBWagon.map(p => ({ ...p, team: 'B' }))];
-
-  const filteredWagonPoints = allWagonPoints.filter(p => {
-    if (wagonFilter === 'all') return true;
-    if (wagonFilter === 'boundaries') return p.type === 'four' || p.type === 'six';
-    if (wagonFilter === 'wickets') return p.type === 'wicket';
-    if (wagonFilter === 'singles') return p.type === 'single' || p.type === 'double';
-    return true;
-  });
+  // Wagon wheel calculations moved below scorecard definitions for player-specific access
 
   // Generate Scorecards deterministically
   const generateScorecard = (seedOffset, teamName, teamPlayers, runs, wickets, totalOvers, opponentPlayers) => {
@@ -316,6 +307,70 @@ export default function MatchDetailsModal({ match, usersList = [], onClose }) {
   const teamAScorecard = generateScorecard(70, teamA.name, teamA.players, match.team_a_runs, match.team_a_wickets, match.team_a_overs, teamB.players);
   const teamBScorecard = generateScorecard(80, teamB.name, teamB.players, match.team_b_runs, match.team_b_wickets, match.team_b_overs, teamA.players);
 
+  // Generate Wagon Wheel Coordinates
+  const teamAWagon = generateWagonWheel(50, match.team_a_runs, match.team_a_wickets);
+  const teamBWagon = generateWagonWheel(60, match.team_b_runs, match.team_b_wickets);
+  const allWagonPoints = [...teamAWagon.map(p => ({ ...p, team: 'A' })), ...teamBWagon.map(p => ({ ...p, team: 'B' }))];
+
+  const generatePlayerWagon = (player, runs, wickets) => {
+    let nameHash = 0;
+    for (let charIndex = 0; charIndex < player.length; charIndex++) {
+      nameHash += player.charCodeAt(charIndex);
+    }
+    const seedOffset = nameHash % 1000;
+    
+    const list = [];
+    const boundaries = Math.max(0, Math.floor(runs / 4.5));
+    const singles = Math.max(0, Math.round((runs - boundaries * 4) / 1.5));
+    const dots = Math.max(1, Math.round(runs * 0.25));
+    
+    for (let i = 0; i < singles; i++) {
+      const seed = matchId * 500 + seedOffset + i;
+      const r1 = seededRandom(seed);
+      const angle = Math.round(r1 * 360);
+      list.push({ angle, runs: r1 > 0.8 ? 2 : 1, type: r1 > 0.8 ? 'double' : 'single' });
+    }
+    for (let i = 0; i < boundaries; i++) {
+      const seed = matchId * 600 + seedOffset + i;
+      const r1 = seededRandom(seed);
+      const angle = Math.round(r1 * 360);
+      list.push({ angle, runs: r1 > 0.8 ? 6 : 4, type: r1 > 0.8 ? 'six' : 'four' });
+    }
+    for (let i = 0; i < dots; i++) {
+      const seed = matchId * 700 + seedOffset + i;
+      const r1 = seededRandom(seed);
+      const angle = Math.round(r1 * 360);
+      list.push({ angle, runs: 0, type: 'dot' });
+    }
+    if (wickets > 0) {
+      const seed = matchId * 800 + seedOffset;
+      const r1 = seededRandom(seed);
+      const angle = Math.round(r1 * 360);
+      list.push({ angle, runs: 0, type: 'wicket' });
+    }
+    return list;
+  };
+
+  const getPlayerDetails = (playerName) => {
+    const batA = teamAScorecard.batting.find(b => b.name === playerName);
+    if (batA) return { runs: batA.runs, gotOut: batA.status !== 'Not Out' ? 1 : 0 };
+    const batB = teamBScorecard.batting.find(b => b.name === playerName);
+    if (batB) return { runs: batB.runs, gotOut: batB.status !== 'Not Out' ? 1 : 0 };
+    return { runs: 0, gotOut: 0 };
+  };
+
+  const wagonPoints = selectedPlayer === 'All' 
+    ? allWagonPoints 
+    : generatePlayerWagon(selectedPlayer, getPlayerDetails(selectedPlayer).runs, getPlayerDetails(selectedPlayer).gotOut);
+
+  const filteredWagonPoints = wagonPoints.filter(p => {
+    if (wagonFilter === 'all') return true;
+    if (wagonFilter === 'boundaries') return p.type === 'four' || p.type === 'six';
+    if (wagonFilter === 'wickets') return p.type === 'wicket';
+    if (wagonFilter === 'singles') return p.type === 'single' || p.type === 'double';
+    return true;
+  });
+
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-[var(--bg-panel)] border border-[var(--border-default)] max-w-4xl w-full rounded-2xl shadow-[var(--shadow-card)] overflow-hidden text-xs flex flex-col max-h-[90vh]">
@@ -460,8 +515,8 @@ export default function MatchDetailsModal({ match, usersList = [], onClose }) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[var(--text-secondary)]">
                   <div className="bg-[var(--bg-input)] p-3 rounded-xl border border-[var(--border-default)]">
                     <span className="text-[10px] text-[var(--text-muted)] block">Assigned Scorer / Umpire</span>
-                    <span className="font-semibold text-[var(--text-primary)] block mt-1">👤 {match.scorer?.full_name || 'Unassigned Official'}</span>
-                    <span className="text-[10px] text-[var(--text-muted)] block font-mono mt-0.5">{match.scorer?.email || 'N/A'}</span>
+                    <span className="font-semibold text-[var(--text-primary)] block mt-1">👤 {scorerUser?.full_name || 'Unassigned Official'}</span>
+                    <span className="text-[10px] text-[var(--text-muted)] block font-mono mt-0.5">{scorerUser?.email || 'N/A'}</span>
                   </div>
                   <div className="bg-[var(--bg-input)] p-3 rounded-xl border border-[var(--border-default)]">
                     <span className="text-[10px] text-[var(--text-muted)] block">Supervising Federation</span>
@@ -742,7 +797,30 @@ export default function MatchDetailsModal({ match, usersList = [], onClose }) {
                 {/* Filters & Information panel */}
                 <div className="flex-1 space-y-4 max-w-sm w-full">
                   <h4 className="font-bold text-[var(--text-primary)]">Interactive Broadcast Wagon Wheel</h4>
-                  <p className="text-[var(--text-secondary)] text-xs font-semibold">Custom field-radiation lines showing shot directions. Filter to inspect categories:</p>
+                  
+                  {/* Player Selector */}
+                  <div className="space-y-1 pt-1">
+                    <label className="block text-[9px] font-extrabold text-[var(--text-secondary)] uppercase tracking-wider">Select Batsman</label>
+                    <select
+                      value={selectedPlayer}
+                      onChange={(e) => setSelectedPlayer(e.target.value)}
+                      className="w-full bg-[var(--bg-input)] border border-[var(--border-default)] rounded-xl px-3 py-2 text-xs text-[var(--text-primary)] font-bold focus:outline-none focus:border-[var(--accent)]"
+                    >
+                      <option value="All">All Batsmen (Total Team Wheel)</option>
+                      <optgroup label={`${teamA.name} Squad`}>
+                        {teamAScorecard.batting.map(b => (
+                          <option key={b.name} value={b.name}>{b.name} ({b.runs} runs)</option>
+                        ))}
+                      </optgroup>
+                      <optgroup label={`${teamB.name} Squad`}>
+                        {teamBScorecard.batting.map(b => (
+                          <option key={b.name} value={b.name}>{b.name} ({b.runs} runs)</option>
+                        ))}
+                      </optgroup>
+                    </select>
+                  </div>
+
+                  <p className="text-[var(--text-secondary)] text-[10px] font-semibold pt-1">Filter shots to inspect category directions:</p>
                   
                   {/* Filter selector */}
                   <div className="flex flex-wrap gap-2 pt-2">

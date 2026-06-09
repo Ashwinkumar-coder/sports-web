@@ -8,52 +8,52 @@
 :root,
 :root[data-theme="dark"] {
   /* Backgrounds */
-  --bg-page:        #141414;
-  --bg-card:        #2A2A2A;
-  --bg-card-hover:  #333333;
-  --bg-panel:       #1F1F1F;
-  --bg-input:       #1F1F1F;
-  --bg-navbar:      #1F1F1F;
-  --bg-sidebar-active: #2A2A2A;
-  --bg-sidebar-hover:  rgba(255, 255, 255, 0.03);
+  --bg-page:        #041c32;
+  --bg-card:        #0b2948;
+  --bg-card-hover:  #12355b;
+  --bg-panel:       #050505;
+  --bg-input:       #031526;
+  --bg-navbar:      #041c32;
+  --bg-sidebar-active: #0b2948;
+  --bg-sidebar-hover:  rgba(214, 255, 0, 0.04);
 
   /* Text */
-  --text-primary:   #F5F5F5;
-  --text-secondary: #888888;
-  --text-muted:     #888888;
-  --text-inverse:   #141414;
+  --text-primary:   #ffffff;
+  --text-secondary: #aab7c4;
+  --text-muted:     #8fa0b0;
+  --text-inverse:   #041c32;
 
   /* Borders */
-  --border-default: rgba(255, 255, 255, 0.05);
-  --border-navbar:  rgba(212, 175, 55, 0.15);
-  --border-focus:   rgba(212, 175, 55, 0.5);
-  --border-card-hover: rgba(212, 175, 55, 0.3);
+  --border-default: rgba(255, 255, 255, 0.08);
+  --border-navbar:  rgba(214, 255, 0, 0.15);
+  --border-focus:   rgba(214, 255, 0, 0.5);
+  --border-card-hover: rgba(214, 255, 0, 0.3);
 
   /* Accents */
-  --accent:         #D4AF37;
-  --accent-dark:    #AA8C2C;
-  --accent-glow:    rgba(212, 175, 55, 0.2);
-  --accent-text:    #D4AF37;
+  --accent:         #d6ff00;
+  --accent-dark:    #b2d600;
+  --accent-glow:    rgba(214, 255, 0, 0.25);
+  --accent-text:    #d6ff00;
 
   /* Status */
   --error-bg:       rgba(255, 255, 255, 0.05);
   --error-border:   rgba(255, 255, 255, 0.15);
-  --error-text:     #888888;
-  --success-bg:     rgba(212, 175, 55, 0.08);
-  --success-border: rgba(212, 175, 55, 0.2);
-  --success-text:   #D4AF37;
+  --error-text:     #aab7c4;
+  --success-bg:     rgba(214, 255, 0, 0.08);
+  --success-border: rgba(214, 255, 0, 0.2);
+  --success-text:   #d6ff00;
 
   /* Shadows */
   --shadow-card:    0 8px 24px rgba(0, 0, 0, 0.4);
   --shadow-navbar:  0 4px 20px rgba(0, 0, 0, 0.35);
-  --shadow-btn:     0 6px 20px rgba(212, 175, 55, 0.2);
+  --shadow-btn:     0 6px 20px rgba(214, 255, 0, 0.2);
 
   /* Scrollbar */
-  --scrollbar-track: #141414;
-  --scrollbar-thumb: #2A2A2A;
+  --scrollbar-track: #041c32;
+  --scrollbar-thumb: #0b2948;
 
   /* Footer */
-  --bg-footer:      #1F1F1F;
+  --bg-footer:      #050505;
   --border-footer:  rgba(255, 255, 255, 0.05);
 }
 
@@ -289,3 +289,14 @@ input::placeholder, textarea::placeholder { color: var(--text-muted); }
   50%      { box-shadow: 0 0 24px var(--accent-glow); }
 }
 .animate-glow { animation: pulse-glow 2.4s ease-in-out infinite; }
+
+/* Smooth Hover Scale & Glow Animation */
+.card-3d {
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+  transform: translateY(0);
+}
+.card-3d:hover {
+  transform: translateY(-4px) scale(1.015);
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.55), 0 0 15px var(--accent-glow);
+  border-color: var(--accent) !important;
+}

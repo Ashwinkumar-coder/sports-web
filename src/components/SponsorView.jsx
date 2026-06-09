@@ -19,7 +19,7 @@ export default function SponsorView({
         <div className="bg-[var(--bg-card)] border border-[var(--border-default)] p-6 rounded-2xl flex items-center justify-between shadow-[var(--shadow-card)]">
           <div>
             <span className="text-[var(--text-secondary)] text-[10px] font-extrabold uppercase tracking-widest block">Total Sponsorship Contributed</span>
-            <span className="text-3xl font-black text-[var(--accent)] mt-1.5 block font-display">${dashboardData.total_sponsored.toFixed(2)}</span>
+            <span className="text-3xl font-black text-[var(--accent)] mt-1.5 block font-display">₹{dashboardData.total_sponsored.toFixed(2)}</span>
           </div>
           <Coins className="w-10 h-10 text-[var(--accent)] opacity-40 shrink-0" />
         </div>

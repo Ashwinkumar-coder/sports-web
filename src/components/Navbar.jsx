@@ -1,12 +1,32 @@
-// src/components/Navbar.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogOut, Bell, Menu, X, Mail } from 'lucide-react';
+import { LogOut, Bell, Menu, X, Mail, Trophy } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Badge } from './ui/Badge';
 
 export default function Navbar({ user, logout, theme, onToggleTheme, notificationLogs = [], onToggleSidebar }) {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [seenCount, setSeenCount] = useState(0);
+
+  useEffect(() => {
+    if (user?.id) {
+      const val = localStorage.getItem(`lastSeenCount_${user.id}`);
+      setSeenCount(val ? parseInt(val, 10) : 0);
+    } else {
+      setSeenCount(0);
+    }
+  }, [user?.id, notificationLogs.length]);
+
+  const handleBellClick = () => {
+    const nextState = !showNotifications;
+    setShowNotifications(nextState);
+    if (nextState && user?.id) {
+      localStorage.setItem(`lastSeenCount_${user.id}`, notificationLogs.length.toString());
+      setSeenCount(notificationLogs.length);
+    }
+  };
+
+  const unreadCount = Math.max(0, notificationLogs.length - seenCount);
 
   return (
     <header className="bg-[var(--bg-navbar)] backdrop-blur-lg border-b border-[var(--border-navbar)] shadow-[var(--shadow-navbar)] sticky top-0 z-50 w-full transition-all duration-300">
@@ -26,12 +46,10 @@ export default function Navbar({ user, logout, theme, onToggleTheme, notificatio
           
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 bg-gradient-to-br from-[var(--accent)] to-[var(--accent-dark)] rounded-xl flex items-center justify-center shadow-[0_0_14px_var(--accent-glow)]">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/>
-              </svg>
+              <Trophy className="w-5 h-5 text-[var(--text-inverse)]" />
             </div>
             <span className="text-base sm:text-lg font-black tracking-wider uppercase text-[var(--text-primary)]">
-              Sports<span className="text-[var(--accent-text)] font-extrabold">Cricket</span>
+              ADVENIRE
             </span>
           </div>
         </div>
@@ -43,13 +61,13 @@ export default function Navbar({ user, logout, theme, onToggleTheme, notificatio
           {user && (
             <div className="relative">
               <button
-                onClick={() => setShowNotifications(!showNotifications)}
+                onClick={handleBellClick}
                 className="p-2 hover:bg-[var(--bg-sidebar-hover)] rounded-xl text-[var(--text-primary)] transition-colors relative"
               >
                 <Bell className="w-5 h-5" />
-                {notificationLogs.length > 0 && (
+                {unreadCount > 0 && (
                   <span className="absolute top-1 right-1 w-4 h-4 bg-red-600 text-[9px] font-bold text-white rounded-full flex items-center justify-center">
-                    {notificationLogs.length}
+                    {unreadCount}
                   </span>
                 )}
               </button>
@@ -86,7 +104,10 @@ export default function Navbar({ user, logout, theme, onToggleTheme, notificatio
                           >
                             <div className="flex justify-between text-[9px] font-mono text-[var(--text-secondary)]">
                               <span>To: {log.recipient_email}</span>
-                              <span>{new Date(log.sent_at).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' }) + ' IST'}</span>
+                              <span>{(() => {
+                                const cleanStr = (log.sent_at.endsWith('Z') || log.sent_at.includes('+')) ? log.sent_at : `${log.sent_at.replace(' ', 'T')}Z`;
+                                return new Date(cleanStr).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST';
+                              })()}</span>
                             </div>
                             <div className="font-bold text-[var(--text-primary)] text-[10px]">{log.subject}</div>
                             <p className="text-[9px] text-[var(--text-secondary)] font-mono leading-tight whitespace-pre-wrap truncate line-clamp-2">

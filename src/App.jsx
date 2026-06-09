@@ -20,6 +20,24 @@ import Navbar from './components/Navbar'
 // Import API services
 import { api } from './services/api'
 
+const STATIC_FINISHED_MATCH = {
+  id: 9999,
+  status: 'completed',
+  tournament: { id: 99, name: "State Championship Finals 2026" },
+  team_a_id: 901,
+  team_a: { id: 901, name: "Chennai Champions" },
+  team_a_runs: 198,
+  team_a_wickets: 4,
+  team_a_overs: 20,
+  team_b_id: 902,
+  team_b: { id: 902, name: "Kovai Strikers" },
+  team_b_runs: 182,
+  team_b_wickets: 7,
+  team_b_overs: 20,
+  winner_id: 901,
+  winner: { id: 901, name: "Chennai Champions" }
+};
+
 function App() {
   const { theme, toggle: toggleTheme } = useTheme()
 
@@ -30,7 +48,7 @@ function App() {
   const [token, setToken] = useState(localStorage.getItem('token') || '')
   const [user, setUser] = useState(null)
 
-  const [activeTab, setActiveTab] = useState('overview')
+  const [activeTab, setActiveTab] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   // Get sidebar links based on role
@@ -38,12 +56,9 @@ function App() {
     switch (role) {
       case 'super_admin':
         return [
-          { id: 'overview', name: 'Overview', icon: '📊' },
-          { id: 'sports_analytics', name: 'Sports Analytics', icon: '📈' },
+          { id: 'dashboard', name: 'Dashboard', icon: '📊' },
           { id: 'departments', name: 'Departments', icon: '🏛️' },
           { id: 'federations', name: 'Federations', icon: '🏅' },
-          { id: 'players', name: 'Player Stats', icon: '👥' },
-          { id: 'records', name: 'Records', icon: '🎗️' },
           { id: 'reports', name: 'Reports', icon: '📋' },
           { id: 'admins', name: 'Admins', icon: '🛡️' },
           { id: 'users', name: 'All Users', icon: '👥' },
@@ -53,7 +68,7 @@ function App() {
         ]
       case 'department_admin':
         return [
-          { id: 'overview', name: 'Overview', icon: '📊' },
+          { id: 'dashboard', name: 'Dashboard', icon: '📊' },
           { id: 'create_federation', name: 'Federations', icon: '🏅' },
           { id: 'approve_users', name: 'Users Approvals', icon: '👥' },
           { id: 'users', name: 'All Users', icon: '👥' },
@@ -62,7 +77,7 @@ function App() {
         ]
       case 'federation_admin':
         return [
-          { id: 'overview', name: 'Overview', icon: '📊' },
+          { id: 'dashboard', name: 'Dashboard', icon: '📊' },
           { id: 'create_tournament', name: 'Tournaments', icon: '🏆' },
           { id: 'schedule_matches', name: 'Schedule Matches', icon: '📅' },
           { id: 'approvals', name: 'Approvals', icon: '⚖️' },
@@ -115,7 +130,14 @@ function App() {
   const [federations, setFederations] = useState([])
   const [usersList, setUsersList] = useState([])
   const [tournaments, setTournaments] = useState([])
-  const [matches, setMatches] = useState([])
+  
+  const [matchesVal, setMatchesVal] = useState([])
+  const [deletedStaticMatch, setDeletedStaticMatch] = useState(false)
+  const matches = deletedStaticMatch ? matchesVal : (matchesVal.some(m => m.id === STATIC_FINISHED_MATCH.id) ? matchesVal : [STATIC_FINISHED_MATCH, ...matchesVal])
+  const setMatches = (data) => {
+    setMatchesVal(data)
+  }
+
   const [notificationLogs, setNotificationLogs] = useState([])
 
   // Dashboard Specific States
@@ -671,6 +693,12 @@ function App() {
   }
 
   const handleDeleteMatch = async (matchId) => {
+    if (matchId === 9999) {
+      setDeletedStaticMatch(true)
+      setMatchesVal(prev => prev.filter(m => m.id !== 9999))
+      setSuccessMsg('Match deleted successfully!')
+      return
+    }
     try {
       await api.deleteMatch(token, matchId)
       setSuccessMsg('Match deleted successfully!')
@@ -766,7 +794,7 @@ function App() {
 
   const isAdmin = user && ['super_admin', 'department_admin', 'federation_admin'].includes(user.role);
   const showRightColumn = isAdmin
-    ? activeTab === 'overview'
+    ? activeTab === 'dashboard'
     : (activeTab !== 'mailbox' && activeTab !== 'matches');
 
   return (
@@ -818,8 +846,7 @@ function App() {
               />
             )}
 
-            {/* Left Sidebar Layout */}
-            <aside className={`fixed md:sticky top-0 md:top-0 bottom-0 left-0 z-40 w-60 bg-[var(--bg-panel)] border-r border-[var(--border-default)] p-4 flex flex-col gap-1.5 shrink-0 transform transition-transform duration-300 md:translate-x-0 h-full md:h-[calc(100vh-4rem)] overflow-y-auto ${
+            <aside className={`fixed top-16 bottom-0 left-0 z-40 w-60 bg-[var(--bg-card)] border-r border-[var(--border-default)] p-4 flex flex-col gap-1.5 shrink-0 transform transition-transform duration-300 md:translate-x-0 h-[calc(100vh-4rem)] overflow-y-auto ${
               sidebarOpen ? 'translate-x-0' : '-translate-x-full'
             }`}>
               <div className="flex justify-between items-center mb-4 md:hidden border-b border-[var(--border-default)] pb-2">
@@ -858,7 +885,7 @@ function App() {
         )}
 
         {/* Dashboard Content Area */}
-        <main className="flex-1 p-4 sm:p-6 min-w-0 max-w-7xl mx-auto w-full">
+        <main className="flex-1 p-4 sm:p-6 min-w-0 max-w-7xl mx-auto w-full md:ml-60">
           {!token || !user ? (
             <div className="flex items-center justify-center min-h-[70vh] w-full">
               <div className="w-full max-w-md">

@@ -94,8 +94,6 @@ export default function Auth({
         <Badge variant="primary" glow className="py-1 px-3.5 uppercase tracking-wider font-mono">
           ⚡ Sports Portal Login
         </Badge>
-        <h1 className="text-2xl font-black text-[var(--text-primary)] tracking-tight">Cricket Portal Sign In</h1>
-        <p className="text-[var(--text-secondary)] text-xs">Sign in to manage team setups, schedule cricket matches, input scores, and review analytical rankings.</p>
       </div>
 
       <form onSubmit={(e) => handleLogin(e, 'standard')} autoComplete="off" className="space-y-4 text-xs">

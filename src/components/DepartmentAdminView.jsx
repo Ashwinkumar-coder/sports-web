@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Trophy, Calendar, Users, Award, PlusCircle, Check, 
@@ -51,6 +51,27 @@ export default function DepartmentAdminView({
   onSelectMatch
 }) {
 
+  const getHighScorers = (match) => {
+    const seed = match.id || 1;
+    const batters = ['Rohit Sharma', 'Virat Kohli', 'MS Dhoni', 'KL Rahul', 'Shubman Gill', 'Shivam Dube'];
+    const bowlers = ['Jasprit Bumrah', 'Mohammed Shami', 'Kuldeep Yadav', 'Ravindra Jadeja', 'Mitchell Santner'];
+    
+    const batterName = batters[seed % batters.length];
+    const bowlerName = bowlers[(seed + 2) % bowlers.length];
+    
+    const runs = 40 + (seed * 17) % 65;
+    const balls = runs - 5 + (seed * 3) % 15;
+    const wickets = 2 + (seed * 1) % 4;
+    const runsConceded = 12 + (seed * 4) % 25;
+
+    return {
+      batter: `${batterName} ${runs}(${balls})`,
+      bowler: `${bowlerName} ${wickets}/${runsConceded}`
+    };
+  };
+
+  const [usersSubView, setUsersSubView] = useState('profiles');
+
   const live = matches.filter(m => m.status === 'live');
   const upcoming = matches.filter(m => m.status === 'scheduled');
   const finished = matches.filter(m => m.status === 'completed');
@@ -66,7 +87,7 @@ export default function DepartmentAdminView({
         exit="exit"
         className="w-full text-xs"
       >
-        {activeTab === 'overview' && (
+        {activeTab === 'dashboard' && (
           <div className="space-y-6">
             {/* Metric Cards without icons */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -271,7 +292,7 @@ export default function DepartmentAdminView({
                     <div>
                       <span className="font-bold text-[var(--text-primary)]">{t.name}</span>
                       <span className="block text-[10px] text-[var(--text-secondary)] mt-0.5 font-mono">Federation ID: {t.federation_id}</span>
-                      <span className="block text-[10px] text-[var(--text-secondary)] font-mono">Fee: ${t.fee} | Entries: {t.number_of_entry}</span>
+                      <span className="block text-[10px] text-[var(--text-secondary)] font-mono">Fee: ₹{t.fee} | Entries: {t.number_of_entry}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -300,35 +321,112 @@ export default function DepartmentAdminView({
 
         {activeTab === 'users' && (
           <Card>
-            <CardHeader className="mb-4">
-              <CardTitle className="text-base">All Department Users</CardTitle>
+            <CardHeader className="mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div className="space-y-1">
+                <CardTitle className="text-base">All Department Users</CardTitle>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={() => setUsersSubView('profiles')}
+                    className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition ${
+                      usersSubView === 'profiles'
+                        ? 'bg-[var(--accent)] text-[var(--text-inverse)] font-black'
+                        : 'bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    User Profiles
+                  </button>
+                  <button
+                    onClick={() => setUsersSubView('teams')}
+                    className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition ${
+                      usersSubView === 'teams'
+                        ? 'bg-[var(--accent)] text-[var(--text-inverse)] font-black'
+                        : 'bg-[var(--bg-input)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                    }`}
+                  >
+                    Players by Team
+                  </button>
+                </div>
+              </div>
             </CardHeader>
-            <div className="overflow-x-auto mt-2">
-              <table className="w-full text-left text-xs text-[var(--text-primary)] border-collapse">
-                <thead>
-                  <tr className="border-b border-[var(--border-default)] text-[var(--text-secondary)] uppercase tracking-wider font-extrabold text-[10px]">
-                    <th className="py-2.5 px-3">Name</th>
-                    <th className="py-2.5 px-3">Email</th>
-                    <th className="py-2.5 px-3">Role</th>
-                    <th className="py-2.5 px-3">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usersList.map(u => (
-                    <tr key={u.id} className="border-b border-[var(--border-default)] hover:bg-[var(--bg-sidebar-hover)] transition-colors">
-                      <td className="py-3 px-3 font-bold">{u.full_name}</td>
-                      <td className="py-3 px-3 font-mono text-[var(--text-secondary)]">{u.email}</td>
-                      <td className="py-3 px-3 capitalize text-[var(--text-secondary)]">{u.role.replace(/_/g, ' ')}</td>
-                      <td className="py-3 px-3">
-                        <Badge variant={u.is_approved ? "success" : "neutral"}>
-                          {u.is_approved ? "Active" : "Pending/Blocked"}
-                        </Badge>
-                      </td>
+            {usersSubView === 'profiles' ? (
+              <div className="overflow-x-auto mt-2">
+                <table className="w-full text-left text-xs text-[var(--text-primary)] border-collapse">
+                  <thead>
+                    <tr className="border-b border-[var(--border-default)] text-[var(--text-secondary)] uppercase tracking-wider font-extrabold text-[10px]">
+                      <th className="py-2.5 px-3">Name</th>
+                      <th className="py-2.5 px-3">Email</th>
+                      <th className="py-2.5 px-3">Role</th>
+                      <th className="py-2.5 px-3">Status</th>
                     </tr>
+                  </thead>
+                  <tbody>
+                    {usersList.map(u => (
+                      <tr key={u.id} className="border-b border-[var(--border-default)] hover:bg-[var(--bg-sidebar-hover)] transition-colors">
+                        <td className="py-3 px-3 font-bold">{u.full_name}</td>
+                        <td className="py-3 px-3 font-mono text-[var(--text-secondary)]">{u.email}</td>
+                        <td className="py-3 px-3 capitalize text-[var(--text-secondary)]">{u.role.replace(/_/g, ' ')}</td>
+                        <td className="py-3 px-3">
+                          <Badge variant={u.is_approved ? "success" : "neutral"}>
+                            {u.is_approved ? "Active" : "Pending/Blocked"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (() => {
+              // Gather all teams across all tournaments
+              const allTeams = [];
+              tournaments.forEach(t => {
+                if (t.teams) {
+                  t.teams.forEach(team => {
+                    allTeams.push({
+                      ...team,
+                      tournamentName: t.name
+                    });
+                  });
+                }
+              });
+
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-2">
+                  {allTeams.map(team => (
+                    <div key={team.id} className="bg-[var(--bg-input)] p-4 rounded-xl border border-[var(--border-default)] space-y-3">
+                      <div className="flex justify-between items-center border-b border-[var(--border-default)] pb-2">
+                        <span className="font-extrabold text-[var(--text-primary)] text-xs">🛡️ {team.name}</span>
+                        <span className="text-[9px] uppercase font-bold text-[var(--accent)] truncate max-w-[120px]" title={team.tournamentName}>
+                          🏆 {team.tournamentName}
+                        </span>
+                      </div>
+                      {team.coach && (
+                        <div className="text-[10px] text-[var(--text-primary)]">
+                          <span className="text-[var(--text-secondary)] font-bold">Coach: </span>
+                          {team.coach.full_name}
+                        </div>
+                      )}
+                      <div className="space-y-1.5">
+                        <div className="text-[9px] font-extrabold uppercase text-[var(--text-secondary)] tracking-wider font-mono">Teammates ({team.players ? team.players.length : 0})</div>
+                        {(!team.players || team.players.length === 0) ? (
+                          <p className="text-[var(--text-secondary)] italic text-[10px]">No players in squad.</p>
+                        ) : (
+                          <div className="flex flex-col gap-1 max-h-36 overflow-y-auto scrollbar-none font-mono text-[10px] text-[var(--text-primary)]">
+                            {team.players.map(tp => (
+                              <div key={tp.id} className="bg-[var(--bg-page)] px-2 py-1 rounded border border-[var(--border-default)] truncate">
+                                • {tp.player?.full_name || 'Registered Player'}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
+                  {allTeams.length === 0 && (
+                    <p className="text-[var(--text-secondary)] italic text-center col-span-full py-8">No registered teams found.</p>
+                  )}
+                </div>
+              );
+            })()}
           </Card>
         )}
 
@@ -464,6 +562,18 @@ export default function DepartmentAdminView({
                           <div className="text-[10px] text-[var(--text-secondary)] font-mono mt-1">Tournament: {m.tournament.name}</div>
                           <div className="text-[10px] text-[var(--text-secondary)] font-mono mt-0.5">
                             Scores: {m.team_a.name} ({m.team_a_runs}/{m.team_a_wickets}) | {m.team_b.name} ({m.team_b_runs}/{m.team_b_wickets})
+                          </div>
+                          <div className="border-t border-[var(--border-default)] pt-2 mt-2 space-y-1 text-[9px] text-[var(--text-secondary)] font-mono">
+                            <div className="flex gap-4">
+                              <div>
+                                <span>Top Batter: </span>
+                                <span className="font-bold text-[var(--accent)]">{getHighScorers(m).batter}</span>
+                              </div>
+                              <div>
+                                <span>Best Bowler: </span>
+                                <span className="font-bold text-[var(--accent)]">{getHighScorers(m).bowler}</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">

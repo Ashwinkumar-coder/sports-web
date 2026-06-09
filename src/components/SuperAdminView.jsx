@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { 
-  Ban, UserCheck, Trash2, Award, MapPin, Users, TrendingUp, Activity, 
-  FileText, Download, CheckCircle, AlertCircle, Filter, Search, Plus, 
-  Edit2, Eye, Sliders, Calendar, DollarSign, Layers, BookOpen, Shield,
+import {
+  Ban, UserCheck, Trash2, Award, MapPin, Users, TrendingUp, Activity,
+  FileText, Download, CheckCircle, AlertCircle, Filter, Search, Plus,
+  Edit2, Eye, Sliders, Calendar, IndianRupee, Layers, BookOpen, Shield,
   Check, X, Briefcase, Trophy
 } from 'lucide-react';
 import StaticCharts from './StaticCharts';
+import SponsorExplodedPieChart from './SponsorExplodedPieChart';
+import DashboardExplodedCharts from './DashboardExplodedCharts';
 
 // Mock/Static data for Super Admin dashboard analytics
 const STATS = {
@@ -168,6 +170,58 @@ export default function SuperAdminView({
   onSelectMatch
 }) {
   const [expandedTournaments, setExpandedTournaments] = useState({});
+  const [usersSubView, setUsersSubView] = useState('profiles');
+  const [analyticsSubTab, setAnalyticsSubTab] = useState('tournaments');
+
+  const getHighScorers = (match) => {
+    const seed = match.id || 1;
+    const batters = ['Rohit Sharma', 'Virat Kohli', 'MS Dhoni', 'KL Rahul', 'Shubman Gill', 'Shivam Dube'];
+    const bowlers = ['Jasprit Bumrah', 'Mohammed Shami', 'Kuldeep Yadav', 'Ravindra Jadeja', 'Mitchell Santner'];
+
+    const batterName = batters[seed % batters.length];
+    const bowlerName = bowlers[(seed + 2) % bowlers.length];
+
+    const runs = 40 + (seed * 17) % 65;
+    const balls = runs - 5 + (seed * 3) % 15;
+    const wickets = 2 + (seed * 1) % 4;
+    const runsConceded = 12 + (seed * 4) % 25;
+
+    return {
+      batter: `${batterName} ${runs}(${balls})`,
+      bowler: `${bowlerName} ${wickets}/${runsConceded}`
+    };
+  };
+
+  const getTournamentSponsors = (tournament) => {
+    if (tournament.sponsorships && tournament.sponsorships.length > 0) {
+      return tournament.sponsorships.map(s => ({
+        name: s.sponsor?.full_name || s.sponsor_name || 'Corporate Sponsor',
+        amount: s.amount,
+        status: s.is_approved ? 'Approved' : 'Pending'
+      }));
+    }
+
+    const seed = tournament.id || 1;
+    const sponsorsPool = [
+      'Tata Consultancy Services', 'Murugappa Group Ltd', 'TVS Motor Company',
+      'MRF Tyres Ltd', 'Chennai Super Kings Acad.', 'Tamil Nadu Tourism',
+      'Cognizant Technology Solutions', 'Wipro Limited', 'Infosys Ltd'
+    ];
+
+    const count = 1 + (seed % 3);
+    const list = [];
+    for (let i = 0; i < count; i++) {
+      const idx = (seed + i * 2) % sponsorsPool.length;
+      const amount = 50000 + ((seed + i) * 35000) % 250000;
+      list.push({
+        name: sponsorsPool[idx],
+        amount: amount,
+        status: 'Approved'
+      });
+    }
+    return list;
+  };
+
   const [deptSearch, setDeptSearch] = useState('');
   const [fedSearch, setFedSearch] = useState('');
   const [playerSearch, setPlayerSearch] = useState('');
@@ -239,7 +293,7 @@ export default function SuperAdminView({
 
   // CSV Downloader Helper
   const downloadReport = (filename, headers, rows) => {
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -337,33 +391,42 @@ All values listed represent audited player lists, medal distributions, and finan
     setAssigningSportsDept(null);
   };
 
-  // Overview Dashboard rendering
-  if (activeTab === 'overview') {
+  // Overview Dashbo  // Overview Dashboard rendering
+  if (activeTab === 'dashboard') {
+    const availableFilters = ['All', 'Popular', 'Fastest Growing', 'High Participation'];
+    const filteredSports = LEADERBOARDS.sports.filter(s => {
+      if (analyticsFilter === 'All') return true;
+      if (analyticsFilter === 'Popular') return s.participationIndex >= 9.0;
+      if (analyticsFilter === 'Fastest Growing') return s.growthPercent.includes('15') || s.growthPercent.includes('22');
+      if (analyticsFilter === 'High Participation') return s.activeEvents > 15;
+      return true;
+    });
+
     return (
       <div className="space-y-6">
         {/* Metric Summaries */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-sports-cyan">
+          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-sports-cyan card-3d">
             <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Registered Players</span>
             <span className="text-2xl font-black text-sports-cyan mt-1">{STATS.totalRegisteredPlayers.toLocaleString()}</span>
           </div>
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-indigo-400">
+          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-indigo-400 card-3d">
             <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Federations</span>
             <span className="text-2xl font-black text-indigo-400 mt-1">{federations.length}</span>
           </div>
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-emerald-400">
+          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-emerald-400 card-3d">
             <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Departments</span>
             <span className="text-2xl font-black text-emerald-400 mt-1">{departments.length}</span>
           </div>
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-amber-400">
+          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-amber-400 card-3d">
             <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Total Teams</span>
             <span className="text-2xl font-black text-amber-400 mt-1">{STATS.totalTeams}</span>
           </div>
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-pink-400">
+          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-pink-400 card-3d">
             <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Active Events</span>
             <span className="text-2xl font-black text-pink-400 mt-1">{STATS.activeTournaments}</span>
           </div>
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-purple-400">
+          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center shadow-lg transition hover:border-purple-400 card-3d">
             <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Total Coaches</span>
             <span className="text-2xl font-black text-purple-400 mt-1">{STATS.totalCoaches}</span>
           </div>
@@ -371,23 +434,23 @@ All values listed represent audited player lists, medal distributions, and finan
 
         {/* Second row metadata metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center">
+          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center card-3d">
             <span className="text-[10px] font-mono text-slate-400">Active Sports:</span>
             <span className="text-sm font-bold text-slate-200">{STATS.totalSports}</span>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center">
+          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center card-3d">
             <span className="text-[10px] font-mono text-slate-400">Districts Administered:</span>
             <span className="text-sm font-bold text-slate-200">{STATS.totalDistricts}</span>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center">
+          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center card-3d">
             <span className="text-[10px] font-mono text-slate-400">Completed Tourneys:</span>
             <span className="text-sm font-bold text-emerald-400">{STATS.completedTournaments}</span>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center">
+          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center card-3d">
             <span className="text-[10px] font-mono text-slate-400">Upcoming Fixtures:</span>
             <span className="text-sm font-bold text-blue-400">{STATS.upcomingEvents}</span>
           </div>
-          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center">
+          <div className="bg-slate-900/40 border border-slate-800/80 p-3 rounded-lg flex justify-between items-center card-3d">
             <span className="text-[10px] font-mono text-slate-400">Total Referees:</span>
             <span className="text-sm font-bold text-amber-400">{STATS.totalReferees}</span>
           </div>
@@ -395,11 +458,10 @@ All values listed represent audited player lists, medal distributions, and finan
 
         {/* Content Section: Quick Lists & Recent Activity Feed */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
           {/* Quick Active Entities lists */}
           <div className="lg:col-span-2 space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-slate-900/50 border border-slate-800/80 p-5 rounded-xl space-y-3">
+              <div className="bg-slate-900/50 border border-slate-800/80 p-5 rounded-xl space-y-3 card-3d">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-2">
                   <h4 className="font-extrabold text-sm text-slate-200 flex items-center gap-2">
                     <Briefcase className="w-4 h-4 text-emerald-400" /> Active Departments
@@ -416,7 +478,7 @@ All values listed represent audited player lists, medal distributions, and finan
                 </div>
               </div>
 
-              <div className="bg-slate-900/50 border border-slate-800/80 p-5 rounded-xl space-y-3">
+              <div className="bg-slate-900/50 border border-slate-800/80 p-5 rounded-xl space-y-3 card-3d">
                 <div className="flex justify-between items-center border-b border-slate-800 pb-2">
                   <h4 className="font-extrabold text-sm text-slate-200 flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-indigo-400" /> Active Federations
@@ -435,270 +497,246 @@ All values listed represent audited player lists, medal distributions, and finan
             </div>
 
             {/* Quick summary chart preview */}
-            <StaticCharts />
+            <div className="card-3d">
+              <StaticCharts />
+            </div>
           </div>
 
-          {/* Activity Feed Column */}
-          <div className="bg-slate-900/60 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-sm text-slate-200 border-b border-slate-850 pb-2 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-red-500 animate-pulse" /> Recent Activity Feed
-            </h4>
-            <div className="space-y-3 max-h-[520px] overflow-y-auto pr-1">
-              {RECENT_ACTIVITIES.map((act) => (
-                <div key={act.id} className="bg-slate-950/70 p-3 rounded-lg border border-slate-900 space-y-1 hover:border-slate-800 transition">
-                  <div className="flex justify-between items-center text-[10px] font-mono">
-                    <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${
-                      act.type === 'registration' ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' :
-                      act.type === 'federation' ? 'bg-indigo-950 text-indigo-400 border border-indigo-900' :
-                      act.type === 'tournament' ? 'bg-pink-950 text-pink-400 border border-pink-900' :
-                      act.type === 'department' ? 'bg-amber-950 text-amber-400 border border-amber-900' :
-                      'bg-slate-950 text-slate-400 border border-slate-800'
-                    }`}>
-                      {act.type}
-                    </span>
-                    <span className="text-slate-500 font-semibold">{act.time}</span>
+          {/* Right Column: Activity Feed & Performance Chart */}
+          <div className="space-y-6 flex flex-col">
+            {/* Activity Feed Column */}
+            <div className="bg-slate-900/60 border border-slate-800 p-5 rounded-xl space-y-4 card-3d">
+              <h4 className="font-extrabold text-sm text-slate-200 border-b border-slate-850 pb-2 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-red-500 animate-pulse" /> Recent Activity Feed
+              </h4>
+              <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1 scrollbar-none">
+                {RECENT_ACTIVITIES.map((act) => (
+                  <div key={act.id} className="bg-slate-950/70 p-3 rounded-lg border border-slate-900 space-y-1 hover:border-slate-800 transition">
+                    <div className="flex justify-between items-center text-[10px] font-mono">
+                      <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${act.type === 'registration' ? 'bg-emerald-950 text-emerald-400 border border-emerald-900' :
+                        act.type === 'federation' ? 'bg-indigo-950 text-indigo-400 border border-indigo-900' :
+                          act.type === 'tournament' ? 'bg-pink-950 text-pink-400 border border-pink-900' :
+                            act.type === 'department' ? 'bg-amber-950 text-amber-400 border border-amber-900' :
+                              'bg-slate-950 text-slate-400 border border-slate-800'
+                        }`}>
+                        {act.type}
+                      </span>
+                      <span className="text-slate-500 font-semibold">{act.time}</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-tight font-medium">
+                      {act.text}
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-300 leading-tight font-medium">
-                    {act.text}
-                  </p>
-                </div>
-              ))}
+                ))}
+              </div>
+              <div className="pt-2 border-t border-slate-850 text-center">
+                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Real-time Stream Online</span>
+              </div>
             </div>
-            <div className="pt-2 border-t border-slate-850 text-center">
-              <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">Real-time Stream Online</span>
-            </div>
-          </div>
 
-        </div>
-      </div>
-    );
-  }
-
-  // Sports & Analytics dashboard
-  if (activeTab === 'sports_analytics') {
-    const availableFilters = ['All', 'Popular', 'Fastest Growing', 'High Participation'];
-    const filteredSports = LEADERBOARDS.sports.filter(s => {
-      if (analyticsFilter === 'All') return true;
-      if (analyticsFilter === 'Popular') return s.participationIndex >= 9.0;
-      if (analyticsFilter === 'Fastest Growing') return s.growthPercent.includes('15') || s.growthPercent.includes('22');
-      if (analyticsFilter === 'High Participation') return s.activeEvents > 15;
-      return true;
-    });
-
-    return (
-      <div className="space-y-6">
-        {/* Title, Filters, and Export Bar */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-slate-900/50 p-4 border border-slate-800 rounded-xl">
-          <div className="flex items-center gap-2.5">
-            <TrendingUp className="w-5 h-5 text-sports-cyan" />
-            <div>
-              <h3 className="font-extrabold text-sm text-slate-200">Sports & District Performance Dashboard</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Detailed demographic growth indices and performance metrics</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2.5 text-xs">
-            <span className="text-slate-400 font-semibold flex items-center gap-1"><Filter className="w-3.5 h-3.5" /> Filter:</span>
-            <div className="flex bg-slate-950 rounded-lg p-0.5 border border-slate-800 font-mono">
-              {availableFilters.map(f => (
-                <button
-                  key={f}
-                  onClick={() => setAnalyticsFilter(f)}
-                  className={`px-2 py-1 rounded text-[10px] font-bold transition ${analyticsFilter === f ? 'bg-sports-cyan text-slate-950 font-black' : 'text-slate-400 hover:text-slate-200'}`}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
+            {/* ── Dashboard Exploded Pie Charts ── */}
+            <DashboardExplodedCharts />
           </div>
         </div>
 
-        {/* Part 1: Registration Analytics, Monthly Growth, Gender & Age */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Gender Participation Donut Chart */}
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4 shadow-lg hover:border-slate-700 transition duration-300">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-              Gender Participation Statistics
-            </h4>
-            <div className="flex flex-col items-center justify-center gap-4 py-2">
-              <div className="relative w-36 h-36">
-                <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90">
-                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--bg-page)" strokeWidth="4.5"></circle>
-                  {/* Male: 62% */}
-                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#06b6d4" strokeWidth="4.5" strokeDasharray="62 38" strokeDashoffset="0"></circle>
-                  {/* Female: 37% */}
-                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ec4899" strokeWidth="4.5" strokeDasharray="37 63" strokeDashoffset="-62"></circle>
-                  {/* Other: 1% */}
-                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f59e0b" strokeWidth="4.5" strokeDasharray="1 99" strokeDashoffset="-99"></circle>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-black text-slate-100">42,820</span>
-                  <span className="text-[9px] uppercase font-mono tracking-widest text-slate-500 font-bold">Total Players</span>
-                </div>
+        {/* ──── merged: sports_analytics section ──── */}
+        <div className="border-t border-slate-800 pt-6 space-y-6">
+          {/* <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-slate-900/50 p-4 border border-slate-800 rounded-xl card-3d">
+            <div className="flex items-center gap-2.5">
+              <TrendingUp className="w-5 h-5 text-sports-cyan" />
+              <div>
+                <h3 className="font-extrabold text-sm text-slate-200">Sports & District Performance</h3>
+                <p className="text-[10px] text-slate-400 font-medium">Detailed demographic growth indices and performance metrics</p>
               </div>
+            </div>
+            <div className="flex items-center gap-2.5 text-xs">
+              <span className="text-slate-400 font-semibold flex items-center gap-1"><Filter className="w-3.5 h-3.5" /> Filter:</span>
+              <div className="flex bg-slate-950 rounded-lg p-0.5 border border-slate-800 font-mono">
+                {availableFilters.map(f => (
+                  <button
+                    key={f}
+                    onClick={() => setAnalyticsFilter(f)}
+                    className={`px-2 py-1 rounded text-[10px] font-bold transition ${analyticsFilter === f ? 'bg-sports-cyan text-slate-950 font-black' : 'text-slate-400 hover:text-slate-200'}`}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div> */}
 
-              {/* Styled Interactive Legend Grid */}
-              <div className="w-full grid grid-cols-3 gap-2 text-[10px] text-center font-mono">
-                <div className="flex flex-col items-center bg-slate-950/60 p-2 rounded-lg border border-slate-900/60">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#06b6d4] mb-1 shadow-[0_0_8px_#06b6d4]"></span>
-                  <span className="text-slate-300 font-bold">Male</span>
-                  <span className="text-[9px] text-slate-500 font-semibold">26.5k (62%)</span>
+          {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4 shadow-lg hover:border-slate-700 transition duration-300 card-3d">
+              <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
+                Gender Participation Statistics
+              </h4>
+              <div className="flex flex-col items-center justify-center gap-4 py-2">
+                <div className="relative w-36 h-36">
+                  <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90">
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--bg-page)" strokeWidth="4.5"></circle>
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#06b6d4" strokeWidth="4.5" strokeDasharray="62 38" strokeDashoffset="0"></circle>
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ec4899" strokeWidth="4.5" strokeDasharray="37 63" strokeDashoffset="-62"></circle>
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f59e0b" strokeWidth="4.5" strokeDasharray="1 99" strokeDashoffset="-99"></circle>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xl font-black text-slate-100">42,820</span>
+                    <span className="text-[9px] uppercase font-mono tracking-widest text-slate-500 font-bold">Total Players</span>
+                  </div>
                 </div>
-                <div className="flex flex-col items-center bg-slate-950/60 p-2 rounded-lg border border-slate-900/60">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ec4899] mb-1 shadow-[0_0_8px_#ec4899]"></span>
-                  <span className="text-slate-300 font-bold">Female</span>
-                  <span className="text-[9px] text-slate-500 font-semibold">15.9k (37%)</span>
-                </div>
-                <div className="flex flex-col items-center bg-slate-950/60 p-2 rounded-lg border border-slate-900/60">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] mb-1 shadow-[0_0_8px_#f59e0b]"></span>
-                  <span className="text-slate-300 font-bold">Other</span>
-                  <span className="text-[9px] text-slate-500 font-semibold">350 (1%)</span>
+                <div className="w-full grid grid-cols-3 gap-2 text-[10px] text-center font-mono">
+                  <div className="flex flex-col items-center bg-slate-950/60 p-2 rounded-lg border border-slate-900/60">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#06b6d4] mb-1 shadow-[0_0_8px_#06b6d4]"></span>
+                    <span className="text-slate-300 font-bold">Male</span>
+                    <span className="text-[9px] text-slate-500 font-semibold">26.5k (62%)</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-slate-950/60 p-2 rounded-lg border border-slate-900/60">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ec4899] mb-1 shadow-[0_0_8px_#ec4899]"></span>
+                    <span className="text-slate-300 font-bold">Female</span>
+                    <span className="text-[9px] text-slate-500 font-semibold">15.9k (37%)</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-slate-950/60 p-2 rounded-lg border border-slate-900/60">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#f59e0b] mb-1 shadow-[0_0_8px_#f59e0b]"></span>
+                    <span className="text-slate-300 font-bold">Other</span>
+                    <span className="text-[9px] text-slate-500 font-semibold">350 (1%)</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Age Category Distribution Donut Chart */}
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4 shadow-lg hover:border-slate-700 transition duration-300">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-              Age Category Distribution
-            </h4>
-            <div className="flex flex-col items-center justify-center gap-4 py-2">
-              <div className="relative w-36 h-36">
-                <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90">
-                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--bg-page)" strokeWidth="4.5"></circle>
-                  {/* Under-14: 20% */}
-                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#a855f7" strokeWidth="4.5" strokeDasharray="20 80" strokeDashoffset="0"></circle>
-                  {/* Under-17: 36% */}
-                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#3b82f6" strokeWidth="4.5" strokeDasharray="36 64" strokeDashoffset="-20"></circle>
-                  {/* Under-19: 28% */}
-                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#10b981" strokeWidth="4.5" strokeDasharray="28 72" strokeDashoffset="-56"></circle>
-                  {/* Seniors: 16% */}
-                  <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f43f5e" strokeWidth="4.5" strokeDasharray="16 84" strokeDashoffset="-84"></circle>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-xl font-black text-slate-100">4 Categories</span>
-                  <span className="text-[9px] uppercase font-mono tracking-widest text-slate-500 font-bold">Youth Pool</span>
+            <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4 shadow-lg hover:border-slate-700 transition duration-300 card-3d">
+              <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
+                Age Category Distribution
+              </h4>
+              <div className="flex flex-col items-center justify-center gap-4 py-2">
+                <div className="relative w-36 h-36">
+                  <svg viewBox="0 0 42 42" className="w-full h-full transform -rotate-90">
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--bg-page)" strokeWidth="4.5"></circle>
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#a855f7" strokeWidth="4.5" strokeDasharray="20 80" strokeDashoffset="0"></circle>
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#3b82f6" strokeWidth="4.5" strokeDasharray="36 64" strokeDashoffset="-20"></circle>
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#10b981" strokeWidth="4.5" strokeDasharray="28 72" strokeDashoffset="-56"></circle>
+                    <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f43f5e" strokeWidth="4.5" strokeDasharray="16 84" strokeDashoffset="-84"></circle>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xl font-black text-slate-100">4 Categories</span>
+                    <span className="text-[9px] uppercase font-mono tracking-widest text-slate-500 font-bold">Youth Pool</span>
+                  </div>
                 </div>
-              </div>
-
-              {/* Detailed Legend Grid */}
-              <div className="w-full grid grid-cols-2 gap-2 text-[10px] font-mono">
-                <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-lg border border-slate-900/60 justify-center">
-                  <span className="w-2 h-2 rounded-full bg-[#a855f7]"></span>
-                  <span className="text-slate-300 font-bold">U14 (20%)</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-lg border border-slate-900/60 justify-center">
-                  <span className="w-2 h-2 rounded-full bg-[#3b82f6]"></span>
-                  <span className="text-slate-300 font-bold">U17 (36%)</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-lg border border-slate-900/60 justify-center">
-                  <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
-                  <span className="text-slate-300 font-bold">U19 (28%)</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-lg border border-slate-900/60 justify-center">
-                  <span className="w-2 h-2 rounded-full bg-[#f43f5e]"></span>
-                  <span className="text-slate-300 font-bold">Senior (16%)</span>
+                <div className="w-full grid grid-cols-2 gap-2 text-[10px] font-mono">
+                  <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-lg border border-slate-900/60 justify-center">
+                    <span className="w-2 h-2 rounded-full bg-[#a855f7]"></span>
+                    <span className="text-slate-300 font-bold">U14 (20%)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-lg border border-slate-900/60 justify-center">
+                    <span className="w-2 h-2 rounded-full bg-[#3b82f6]"></span>
+                    <span className="text-slate-300 font-bold">U17 (36%)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-lg border border-slate-900/60 justify-center">
+                    <span className="w-2 h-2 rounded-full bg-[#10b981]"></span>
+                    <span className="text-slate-300 font-bold">U19 (28%)</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-slate-950/60 p-1.5 rounded-lg border border-slate-900/60 justify-center">
+                    <span className="w-2 h-2 rounded-full bg-[#f43f5e]"></span>
+                    <span className="text-slate-300 font-bold">Senior (16%)</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Monthly Growth of Registrations */}
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-              Monthly Growth Trends
-            </h4>
-            <div className="space-y-3.5 font-mono text-xs">
-              <div className="flex justify-between border-b border-slate-900 pb-1.5">
-                <span className="text-slate-400">January 2026</span>
-                <span className="text-emerald-400 font-bold">+850 Players</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-900 pb-1.5">
-                <span className="text-slate-400">February 2026</span>
-                <span className="text-emerald-400 font-bold">+1,100 Players</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-900 pb-1.5">
-                <span className="text-slate-400">March 2026</span>
-                <span className="text-emerald-400 font-bold">+1,250 Players</span>
-              </div>
-              <div className="flex justify-between border-b border-slate-900 pb-1.5">
-                <span className="text-slate-400">April 2026</span>
-                <span className="text-emerald-400 font-bold">+1,400 Players</span>
-              </div>
-              <div className="flex justify-between pb-1">
-                <span className="text-slate-400">May 2026 (Est)</span>
-                <span className="text-sports-cyan font-bold">+1,800 Players</span>
+            <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4 card-3d">
+              <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
+                Monthly Growth Trends
+              </h4>
+              <div className="space-y-3.5 font-mono text-xs">
+                <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                  <span className="text-slate-400">January 2026</span>
+                  <span className="text-emerald-400 font-bold">+850 Players</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                  <span className="text-slate-400">February 2026</span>
+                  <span className="text-emerald-400 font-bold">+1,100 Players</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                  <span className="text-slate-400">March 2026</span>
+                  <span className="text-emerald-400 font-bold">+1,250 Players</span>
+                </div>
+                <div className="flex justify-between border-b border-slate-900 pb-1.5">
+                  <span className="text-slate-400">April 2026</span>
+                  <span className="text-emerald-400 font-bold">+1,400 Players</span>
+                </div>
+                <div className="flex justify-between pb-1">
+                  <span className="text-slate-400">May 2026 (Est)</span>
+                  <span className="text-sports-cyan font-bold">+1,800 Players</span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </div> */}
 
-        {/* Part 2: District Performance Dashboard & Trends */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-              District Performance rankings & Sport Popularity
-            </h4>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-800 font-mono text-slate-400">
-                    <th className="py-2 px-1">Rank</th>
-                    <th className="py-2 px-2">District</th>
-                    <th className="py-2 px-2 text-right">Player Count</th>
-                    <th className="py-2 px-2 text-right">Medals</th>
-                    <th className="py-2 px-2 text-right">Performance Score</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {LEADERBOARDS.districts.map(d => (
-                    <tr key={d.name} className="border-b border-slate-900 text-slate-300 hover:bg-slate-900/10">
-                      <td className="py-2 px-1 font-bold text-sports-cyan">{d.rank}</td>
-                      <td className="py-2 px-2 font-semibold flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-500" /> {d.name}</td>
-                      <td className="py-2 px-2 text-right font-mono">{d.totalPlayers.toLocaleString()}</td>
-                      <td className="py-2 px-2 text-right font-mono text-yellow-400 font-bold">{d.totalMedals}</td>
-                      <td className="py-2 px-2 text-right font-mono">
-                        <span className="bg-emerald-950/40 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-900/30 text-[10px]">
-                          {d.rating}
-                        </span>
-                      </td>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4 card-3d">
+              <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
+                District Performance rankings & Sport Popularity
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 font-mono text-slate-400">
+                      <th className="py-2 px-1">Rank</th>
+                      <th className="py-2 px-2">District</th>
+                      <th className="py-2 px-2 text-right">Player Count</th>
+                      <th className="py-2 px-2 text-right">Medals</th>
+                      <th className="py-2 px-2 text-right">Performance Score</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {LEADERBOARDS.districts.map(d => (
+                      <tr key={d.name} className="border-b border-slate-900 text-slate-300 hover:bg-slate-900/10">
+                        <td className="py-2 px-1 font-bold text-sports-cyan">{d.rank}</td>
+                        <td className="py-2 px-2 font-semibold flex items-center gap-1"><MapPin className="w-3 h-3 text-slate-500" /> {d.name}</td>
+                        <td className="py-2 px-2 text-right font-mono">{d.totalPlayers.toLocaleString()}</td>
+                        <td className="py-2 px-2 text-right font-mono text-yellow-400 font-bold">{d.totalMedals}</td>
+                        <td className="py-2 px-2 text-right font-mono">
+                          <span className="bg-emerald-950/40 text-emerald-400 px-1.5 py-0.5 rounded border border-emerald-900/30 text-[10px]">
+                            {d.rating}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
 
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-              Sports Growth & Participation Index
-            </h4>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-800 font-mono text-slate-400">
-                    <th className="py-2 px-1">Rank</th>
-                    <th className="py-2 px-2">Sport Discipline</th>
-                    <th className="py-2 px-2 text-right">Participation Index</th>
-                    <th className="py-2 px-2 text-right">Active Tourneys</th>
-                    <th className="py-2 px-2 text-right">Growth Rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSports.map(s => (
-                    <tr key={s.name} className="border-b border-slate-900 text-slate-300 hover:bg-slate-900/10">
-                      <td className="py-2 px-1 font-bold text-indigo-400">{s.rank}</td>
-                      <td className="py-2 px-2 font-semibold">{s.name}</td>
-                      <td className="py-2 px-2 text-right font-mono text-slate-200">{s.participationIndex} / 10</td>
-                      <td className="py-2 px-2 text-right font-mono">{s.activeEvents}</td>
-                      <td className="py-2 px-2 text-right font-mono text-emerald-400 font-bold">{s.growthPercent}</td>
+            <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4 card-3d">
+              <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
+                Sports Growth & Participation Index
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-800 font-mono text-slate-400">
+                      <th className="py-2 px-1">Rank</th>
+                      <th className="py-2 px-2">Sport Discipline</th>
+                      <th className="py-2 px-2 text-right">Participation Index</th>
+                      <th className="py-2 px-2 text-right">Active Tourneys</th>
+                      <th className="py-2 px-2 text-right">Growth Rate</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="p-3 bg-slate-950 border border-slate-900 rounded-lg text-[10px] text-slate-400 font-mono leading-tight">
-              📊 <strong>District Popularity Trend:</strong> Cricket is most popular in urban coastal zones (Chennai), while Athletics and Kabaddi see maximum growth in Western and Southern Tamil Nadu (Coimbatore, Madurai, Tirunelveli).
+                  </thead>
+                  <tbody>
+                    {filteredSports.map(s => (
+                      <tr key={s.name} className="border-b border-slate-900 text-slate-300 hover:bg-slate-900/10">
+                        <td className="py-2 px-1 font-bold text-indigo-400">{s.rank}</td>
+                        <td className="py-2 px-2 font-semibold">{s.name}</td>
+                        <td className="py-2 px-2 text-right font-mono text-slate-200">{s.participationIndex} / 10</td>
+                        <td className="py-2 px-2 text-right font-mono">{s.activeEvents}</td>
+                        <td className="py-2 px-2 text-right font-mono text-emerald-400 font-bold">{s.growthPercent}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-3 bg-slate-950 border border-slate-900 rounded-lg text-[10px] text-slate-400 font-mono leading-tight">
+                📊 <strong>District Popularity Trend:</strong> Cricket is most popular in urban coastal zones (Chennai), while Athletics and Kabaddi see maximum growth in Western and Southern Tamil Nadu (Coimbatore, Madurai, Tirunelveli).
+              </div>
             </div>
           </div>
         </div>
@@ -708,7 +746,7 @@ All values listed represent audited player lists, medal distributions, and finan
 
   // Departments list & operations
   if (activeTab === 'departments') {
-    const filteredDepts = departments.filter(d => 
+    const filteredDepts = departments.filter(d =>
       d.name.toLowerCase().includes(deptSearch.toLowerCase()) ||
       d.head.toLowerCase().includes(deptSearch.toLowerCase())
     );
@@ -730,8 +768,8 @@ All values listed represent audited player lists, medal distributions, and finan
             />
           </div>
           <div className="flex gap-2">
-            <button 
-              onClick={() => handleExportExcel('Department Performance')} 
+            <button
+              onClick={() => handleExportExcel('Department Performance')}
               className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 font-semibold text-xs flex items-center gap-1.5 hover:bg-slate-900"
             >
               <Download className="w-3.5 h-3.5" /> Export Excel
@@ -809,21 +847,21 @@ All values listed represent audited player lists, medal distributions, and finan
                     <td className="py-3 px-4 text-right font-mono font-bold text-sports-cyan">{d.score}</td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex justify-end gap-1.5">
-                        <button 
+                        <button
                           onClick={() => setEditingDept(d)}
                           className="p-1 hover:bg-slate-950 rounded text-amber-400 transition"
                           title="Edit Department"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => setAssigningSportsDept(d)}
                           className="px-2 py-0.5 text-[9px] bg-indigo-950/60 hover:bg-indigo-900 text-indigo-300 rounded border border-indigo-900/50"
                           title="Assign Sports"
                         >
                           Assign Sports
                         </button>
-                        <button 
+                        <button
                           onClick={() => handleExportPDF(`Department_${d.name}`)}
                           className="p-1 hover:bg-slate-950 rounded text-slate-400 transition"
                           title="Generate Report"
@@ -937,7 +975,7 @@ All values listed represent audited player lists, medal distributions, and finan
 
   // Federations Module
   if (activeTab === 'federations') {
-    const filteredFeds = federations.filter(f => 
+    const filteredFeds = federations.filter(f =>
       f.name.toLowerCase().includes(fedSearch.toLowerCase()) ||
       f.president.toLowerCase().includes(fedSearch.toLowerCase())
     );
@@ -958,8 +996,8 @@ All values listed represent audited player lists, medal distributions, and finan
               onChange={(e) => setFedSearch(e.target.value)}
             />
           </div>
-          <button 
-            onClick={() => handleExportExcel('Registered Federations')} 
+          <button
+            onClick={() => handleExportExcel('Registered Federations')}
             className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-300 font-semibold text-xs flex items-center gap-1.5 hover:bg-slate-900"
           >
             <Download className="w-3.5 h-3.5" /> Export Excel
@@ -992,11 +1030,10 @@ All values listed represent audited player lists, medal distributions, and finan
                       <div className="text-[10px] text-slate-500">Sec: {f.secretary}</div>
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase font-mono ${
-                        f.status === 'Approved' ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-900/40' :
+                      <span className={`px-2 py-0.5 rounded-full font-bold text-[9px] uppercase font-mono ${f.status === 'Approved' ? 'bg-emerald-950/80 text-emerald-400 border border-emerald-900/40' :
                         f.status === 'Pending' ? 'bg-amber-950/80 text-amber-400 border border-amber-900/40' :
-                        'bg-red-950/85 text-red-400 border border-red-900/40'
-                      }`}>
+                          'bg-red-950/85 text-red-400 border border-red-900/40'
+                        }`}>
                         {f.status}
                       </span>
                     </td>
@@ -1149,201 +1186,6 @@ All values listed represent audited player lists, medal distributions, and finan
     );
   }
 
-  // Player Statistics & Leaderboards
-  if (activeTab === 'players') {
-    return (
-      <div className="space-y-6">
-        {/* Core numbers */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center">
-            <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Total Players</span>
-            <span className="text-2xl font-black text-sports-cyan mt-1">{PLAYERS_STATISTICS.total.toLocaleString()}</span>
-          </div>
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center">
-            <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">Active Players</span>
-            <span className="text-2xl font-black text-emerald-400 mt-1">{PLAYERS_STATISTICS.active.toLocaleString()}</span>
-          </div>
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center">
-            <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">New This Month</span>
-            <span className="text-2xl font-black text-pink-400 mt-1">+{PLAYERS_STATISTICS.newRegistrationsThisMonth}</span>
-          </div>
-          <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col justify-center">
-            <span className="text-slate-400 text-[10px] uppercase tracking-wider font-semibold">National Pool Rating</span>
-            <span className="text-2xl font-black text-yellow-400 mt-1">9.4 / 10</span>
-          </div>
-        </div>
-
-        {/* Players by Demographic Distribution */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-              Players Distribution By District (Tamil Nadu Top 5)
-            </h4>
-            <div className="space-y-3 font-mono text-xs">
-              {PLAYERS_STATISTICS.byDistrict.map(d => (
-                <div key={d.name} className="flex justify-between items-center bg-slate-950/60 p-2 rounded border border-slate-900">
-                  <span className="text-slate-300">📍 {d.name} District</span>
-                  <span className="text-sports-cyan font-bold">{d.count.toLocaleString()} Players</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-              Players Distribution By Sport Discipline
-            </h4>
-            <div className="space-y-3 font-mono text-xs">
-              {PLAYERS_STATISTICS.bySport.map(s => (
-                <div key={s.name} className="flex justify-between items-center bg-slate-950/60 p-2 rounded border border-slate-900">
-                  <span className="text-slate-300">🏃 {s.name}</span>
-                  <span className="text-indigo-400 font-bold">{s.count.toLocaleString()} Players</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Leaderboards Tab: Players & Coaches */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Top Players Leaderboard */}
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2 flex justify-between items-center">
-              <span>🏆 Top Performers Leaderboard</span>
-              <span className="text-[10px] font-mono text-slate-500">Points Rating</span>
-            </h4>
-            <div className="space-y-2">
-              {LEADERBOARDS.players.map((p, idx) => (
-                <div key={p.name} className="bg-slate-950/70 p-3 rounded-lg border border-slate-900 flex justify-between items-center text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold font-mono text-[10px] ${
-                      idx === 0 ? 'bg-yellow-400 text-slate-950' :
-                      idx === 1 ? 'bg-slate-300 text-slate-950' :
-                      idx === 2 ? 'bg-amber-600 text-white' :
-                      'bg-slate-800 text-slate-400'
-                    }`}>
-                      {p.rank}
-                    </span>
-                    <div>
-                      <div className="font-bold text-slate-200">{p.name}</div>
-                      <div className="text-[10px] text-slate-500">{p.sport} | {p.district}</div>
-                    </div>
-                  </div>
-                  <span className="font-mono text-emerald-400 font-bold">{p.performancePoints} pts</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Top Teams Leaderboard */}
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2 flex justify-between items-center">
-              <span>🛡️ Top Performing Teams</span>
-              <span className="text-[10px] font-mono text-slate-500">Wins - Losses</span>
-            </h4>
-            <div className="space-y-2">
-              {LEADERBOARDS.teams.map((t, idx) => (
-                <div key={t.name} className="bg-slate-950/70 p-3 rounded-lg border border-slate-900 flex justify-between items-center text-xs">
-                  <div className="flex items-center gap-3">
-                    <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold font-mono text-[10px] ${
-                      idx === 0 ? 'bg-yellow-400 text-slate-950' :
-                      idx === 1 ? 'bg-slate-300 text-slate-950' :
-                      idx === 2 ? 'bg-amber-600 text-white' :
-                      'bg-slate-800 text-slate-400'
-                    }`}>
-                      {t.rank}
-                    </span>
-                    <div>
-                      <div className="font-bold text-slate-200">{t.name}</div>
-                      <div className="text-[10px] text-slate-500">{t.sport} | {t.district}</div>
-                    </div>
-                  </div>
-                  <span className="font-mono text-sports-cyan font-bold">{t.wins}W - {t.losses}L</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-        </div>
-      </div>
-    );
-  }
-
-  // Records & Achievements
-  if (activeTab === 'records') {
-    return (
-      <div className="space-y-6">
-        <div className="bg-slate-900/50 p-5 border border-slate-800 rounded-xl space-y-3">
-          <h3 className="font-extrabold text-sm text-slate-200 flex items-center gap-2">
-            <Award className="w-5 h-5 text-yellow-400" /> State Records & Hall of Fame Achievements
-          </h3>
-          <p className="text-xs text-slate-400">Validated state and national record parameters established under Tamil Nadu Sports Development Authority guidance.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-          {/* Best Performers */}
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-              Outstanding Entities
-            </h4>
-            <div className="space-y-3">
-              <div className="bg-slate-950/70 p-3 rounded-lg border border-slate-900 flex justify-between items-center">
-                <div>
-                  <span className="text-[9px] text-slate-500 uppercase font-mono">Best District Rating</span>
-                  <div className="font-bold text-slate-200 mt-0.5">{RECORDS_ACHIEVEMENTS.bestDistrict}</div>
-                </div>
-                <MapPin className="w-5 h-5 text-sports-cyan" />
-              </div>
-              <div className="bg-slate-950/70 p-3 rounded-lg border border-slate-900 flex justify-between items-center">
-                <div>
-                  <span className="text-[9px] text-slate-500 uppercase font-mono">Best Performing Association</span>
-                  <div className="font-bold text-slate-200 mt-0.5">{RECORDS_ACHIEVEMENTS.bestFederation}</div>
-                </div>
-                <Award className="w-5 h-5 text-indigo-400" />
-              </div>
-            </div>
-          </div>
-
-          {/* National Record Holders */}
-          <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-            <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-              National Record Holders (TN State Delegation)
-            </h4>
-            <div className="space-y-3 font-mono">
-              {RECORDS_ACHIEVEMENTS.nationalRecordHolders.map(r => (
-                <div key={r.name} className="bg-slate-950/70 p-3 rounded-lg border border-slate-900 flex justify-between items-center">
-                  <div>
-                    <div className="font-bold text-slate-200">{r.name}</div>
-                    <div className="text-[10px] text-slate-500 mt-0.5">Event Discipline: {r.event}</div>
-                  </div>
-                  <span className="text-[10px] text-emerald-400 font-bold">{r.date}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Tournament Champions */}
-        <div className="bg-slate-900/40 border border-slate-800 p-5 rounded-xl space-y-4">
-          <h4 className="font-extrabold text-xs text-slate-200 uppercase tracking-wider border-b border-slate-850 pb-2">
-            Recent Tournament Champions
-          </h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-            {RECORDS_ACHIEVEMENTS.champions.map(c => (
-              <div key={c.event} className="bg-slate-950/60 p-3 rounded border border-slate-900 flex justify-between items-center">
-                <div>
-                  <div className="text-slate-400">{c.event}</div>
-                  <div className="font-bold text-emerald-400 mt-1">🏆 Winner: {c.champion}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Reports Generation and Download section
   if (activeTab === 'reports') {
     const reportCategories = [
@@ -1491,92 +1333,172 @@ All values listed represent audited player lists, medal distributions, and finan
 
   // Users tab
   if (activeTab === 'users') {
-    const filteredUsers = usersList.filter(u => 
-      u.full_name.toLowerCase().includes(playerSearch.toLowerCase()) || 
+    const filteredUsers = usersList.filter(u =>
+      u.full_name.toLowerCase().includes(playerSearch.toLowerCase()) ||
       u.email.toLowerCase().includes(playerSearch.toLowerCase())
     );
 
     return (
       <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-xl space-y-4">
+        {/* Toggle Controls */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-slate-800 pb-4">
-          <h3 className="font-extrabold text-sm text-slate-200">Manage Registered Users</h3>
-          <div className="relative w-full max-w-xs">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-              <Search className="w-4 h-4 text-slate-500" />
-            </span>
-            <input
-              type="text"
-              placeholder="Search user profiles..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sports-cyan placeholder-slate-500"
-              value={playerSearch}
-              onChange={(e) => setPlayerSearch(e.target.value)}
-            />
+          <div className="space-y-1">
+            <h3 className="font-extrabold text-sm text-slate-200">Manage Registered Users</h3>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => setUsersSubView('profiles')}
+                className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition ${usersSubView === 'profiles'
+                  ? 'bg-sports-cyan text-slate-950 font-black'
+                  : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200'
+                  }`}
+              >
+                User Profiles
+              </button>
+              <button
+                onClick={() => setUsersSubView('teams')}
+                className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition ${usersSubView === 'teams'
+                  ? 'bg-sports-cyan text-slate-950 font-black'
+                  : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-slate-200'
+                  }`}
+              >
+                Players by Team
+              </button>
+            </div>
           </div>
+
+          {usersSubView === 'profiles' && (
+            <div className="relative w-full max-w-xs">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-3">
+                <Search className="w-4 h-4 text-slate-500" />
+              </span>
+              <input
+                type="text"
+                placeholder="Search user profiles..."
+                className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-4 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-sports-cyan placeholder-slate-500"
+                value={playerSearch}
+                onChange={(e) => setPlayerSearch(e.target.value)}
+              />
+            </div>
+          )}
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300 border-collapse">
-            <thead>
-              <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider">
-                <th className="py-2 px-3">Name</th>
-                <th className="py-2 px-3">Email</th>
-                <th className="py-2 px-3">Role</th>
-                <th className="py-2 px-3">Status</th>
-                <th className="py-2 px-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map(u => (
-                <tr key={u.id} className="border-b border-slate-850 hover:bg-slate-900/20">
-                  <td className="py-2 px-3 font-semibold">{u.full_name}</td>
-                  <td className="py-2 px-3 font-mono">{u.email}</td>
-                  <td className="py-2 px-3 capitalize">{u.role.replace('_', ' ')}</td>
-                  <td className="py-2 px-3">
-                    {u.is_approved ? (
-                      <span className="text-emerald-400 font-bold bg-emerald-950/35 px-1.5 py-0.5 rounded">Active</span>
-                    ) : (
-                      <span className="text-amber-400 bg-amber-950/35 px-1.5 py-0.5 rounded">Pending/Blocked</span>
-                    )}
-                  </td>
-                  <td className="py-3 px-3 text-right">
-                    <div className="flex justify-end items-center gap-2">
-                      {u.role !== 'super_admin' && (
-                        u.is_approved ? (
-                          <button
-                            type="button"
-                            onClick={() => handleBlockUser(u.id)}
-                            title="Block User"
-                            className="w-8 h-8 flex items-center justify-center bg-slate-850 hover:bg-slate-800 text-amber-400 rounded-lg border border-slate-700/60 cursor-pointer transition duration-150"
-                          >
-                            <Ban className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => handleUnblockUser(u.id)}
-                            title="Unblock User"
-                            className="w-8 h-8 flex items-center justify-center bg-emerald-950/60 hover:bg-emerald-900 text-emerald-400 rounded-lg border border-emerald-800/60 cursor-pointer transition duration-150"
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </button>
-                        )
-                      )}
-                      {u.role !== 'super_admin' && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteUser(u.id)}
-                          title="Delete User"
-                          className="w-8 h-8 flex items-center justify-center bg-red-950/60 hover:bg-red-900 text-red-400 rounded-lg border border-red-900/60 cursor-pointer transition duration-150"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+
+        {usersSubView === 'profiles' ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-300 border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 uppercase tracking-wider">
+                  <th className="py-2 px-3">Name</th>
+                  <th className="py-2 px-3">Email</th>
+                  <th className="py-2 px-3">Role</th>
+                  <th className="py-2 px-3">Status</th>
+                  <th className="py-2 px-3 text-right">Actions</th>
                 </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map(u => (
+                  <tr key={u.id} className="border-b border-slate-850 hover:bg-slate-900/20">
+                    <td className="py-2 px-3 font-semibold">{u.full_name}</td>
+                    <td className="py-2 px-3 font-mono">{u.email}</td>
+                    <td className="py-2 px-3 capitalize">{u.role.replace('_', ' ')}</td>
+                    <td className="py-2 px-3">
+                      {u.is_approved ? (
+                        <span className="text-emerald-400 font-bold bg-emerald-950/35 px-1.5 py-0.5 rounded">Active</span>
+                      ) : (
+                        <span className="text-amber-400 bg-amber-950/35 px-1.5 py-0.5 rounded">Pending/Blocked</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      <div className="flex justify-end items-center gap-2">
+                        {u.role !== 'super_admin' && (
+                          u.is_approved ? (
+                            <button
+                              type="button"
+                              onClick={() => handleBlockUser(u.id)}
+                              title="Block User"
+                              className="w-8 h-8 flex items-center justify-center bg-slate-850 hover:bg-slate-800 text-amber-400 rounded-lg border border-slate-700/60 cursor-pointer transition duration-150"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleUnblockUser(u.id)}
+                              title="Unblock User"
+                              className="w-8 h-8 flex items-center justify-center bg-emerald-950/60 hover:bg-emerald-900 text-emerald-400 rounded-lg border border-emerald-800/60 cursor-pointer transition duration-150"
+                            >
+                              <UserCheck className="w-4 h-4" />
+                            </button>
+                          )
+                        )}
+                        {u.role !== 'super_admin' && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteUser(u.id)}
+                            title="Delete User"
+                            className="w-8 h-8 flex items-center justify-center bg-red-950/60 hover:bg-red-900 text-red-400 rounded-lg border border-red-900/60 cursor-pointer transition duration-150"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (() => {
+          // Gather all teams across all tournaments
+          const allTeams = [];
+          tournaments.forEach(t => {
+            if (t.teams) {
+              t.teams.forEach(team => {
+                allTeams.push({
+                  ...team,
+                  tournamentName: t.name
+                });
+              });
+            }
+          });
+
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-2">
+              {allTeams.map(team => (
+                <div key={team.id} className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <div className="flex justify-between items-center border-b border-slate-900 pb-2">
+                    <span className="font-extrabold text-slate-100 text-xs">🛡️ {team.name}</span>
+                    <span className="text-[9px] uppercase font-bold text-sports-cyan truncate max-w-[120px]" title={team.tournamentName}>
+                      🏆 {team.tournamentName}
+                    </span>
+                  </div>
+                  {team.coach && (
+                    <div className="text-[10px] text-slate-300">
+                      <span className="text-slate-500 font-bold">Coach: </span>
+                      {team.coach.full_name}
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <div className="text-[9px] font-extrabold uppercase text-slate-500 tracking-wider">Teammates ({team.players ? team.players.length : 0})</div>
+                    {(!team.players || team.players.length === 0) ? (
+                      <p className="text-slate-500 italic text-[10px]">No players in squad.</p>
+                    ) : (
+                      <div className="flex flex-col gap-1 max-h-36 overflow-y-auto scrollbar-none font-mono text-[10px] text-slate-300">
+                        {team.players.map(tp => (
+                          <div key={tp.id} className="bg-slate-900/35 px-2 py-1 rounded border border-slate-900/50 truncate">
+                            • {tp.player?.full_name || 'Registered Player'}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+              {allTeams.length === 0 && (
+                <p className="text-slate-500 italic text-center col-span-full py-8">No registered teams found.</p>
+              )}
+            </div>
+          );
+        })()}
       </div>
     );
   }
@@ -1654,6 +1576,30 @@ All values listed represent audited player lists, medal distributions, and finan
                         ))}
                       </div>
                     )}
+
+                    {/* Tournament Sponsors */}
+                    <div className="border-t border-slate-900 pt-4 space-y-2">
+                      <h4 className="font-bold text-slate-400 text-[10px] uppercase tracking-wider flex items-center gap-1.5">
+                        🤝 Corporate Sponsors ({getTournamentSponsors(t).length})
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        {getTournamentSponsors(t).map((sponsor, idx) => (
+                          <div key={idx} className="bg-slate-900/40 border border-slate-800/60 p-2.5 rounded-lg flex flex-col justify-between space-y-1">
+                            <div className="font-semibold text-slate-200 text-[11px] truncate" title={sponsor.name}>
+                              🏢 {sponsor.name}
+                            </div>
+                            <div className="flex justify-between items-center mt-1">
+                              <span className="text-[10px] font-mono text-sports-cyan font-bold">
+                                ${sponsor.amount.toLocaleString()}
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded text-[8px] uppercase font-mono font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-900/40">
+                                {sponsor.status}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1765,6 +1711,18 @@ All values listed represent audited player lists, medal distributions, and finan
                       <div className="text-[10px] text-slate-400 font-mono mt-0.5">Tournament: {m.tournament.name}</div>
                       <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                         Scores: {m.team_a.name} ({m.team_a_runs}/{m.team_a_wickets}) | {m.team_b.name} ({m.team_b_runs}/{m.team_b_wickets})
+                      </div>
+                      <div className="border-t border-slate-900 pt-2 mt-2 space-y-1 text-[9px] text-slate-400 font-mono">
+                        <div className="flex gap-4">
+                          <div>
+                            <span className="text-slate-500">Top Batter: </span>
+                            <span className="font-bold text-sports-cyan">{getHighScorers(m).batter}</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500">Best Bowler: </span>
+                            <span className="font-bold text-sports-cyan">{getHighScorers(m).bowler}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
