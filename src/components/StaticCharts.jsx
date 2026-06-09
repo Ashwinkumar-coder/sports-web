@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Award, MapPin, TrendingUp, Activity, BarChart2, MessageSquare, CheckCircle, Sliders, RotateCw, RefreshCw, Users, Compass } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from './ui/Card';
-import TamilNaduMap from './TamilNaduMAp';
+import TamilNaduMap from './TamilNaduMap';
 
 export default function StaticCharts() {
   // Exploded Pie Chart States
